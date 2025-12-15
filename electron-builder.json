@@ -1,0 +1,53 @@
+{
+    "appId": "com.gradeapp.manager",
+    "productName": "GradeApp",
+    "directories": {
+        "output": "dist-electron",
+        "buildResources": "build"
+    },
+    "files": [
+        "dist/**/*",
+        "electron/**/*",
+        "package.json"
+    ],
+    "win": {
+        "target": [
+            {
+                "target": "nsis",
+                "arch": [
+                    "x64"
+                ]
+            },
+            {
+                "target": "portable",
+                "arch": [
+                    "x64"
+                ]
+            }
+        ],
+        "icon": "public/imagenes/logo-principal.png",
+        "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "shortcutName": "GradeApp",
+        "installerIcon": "public/imagenes/logo-principal.png",
+        "uninstallerIcon": "public/imagenes/logo-principal.png",
+        "installerHeaderIcon": "public/imagenes/logo-principal.png"
+    },
+    "portable": {
+        "artifactName": "${productName}-${version}-portable.${ext}"
+    },
+    "extraResources": [
+        {
+            "from": "backend",
+            "to": "backend",
+            "filter": [
+                "**/*"
+            ]
+        }
+    ]
+}
