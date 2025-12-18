@@ -1,270 +1,172 @@
-# 📚 GradeApp - Sistema de Gestión de Calificaciones
+# 🎓 GradePro - Sistema de Gestión Académica
 
-<div align="center">
-  <img src="public/imagenes/logo-principal.png" alt="GradeApp Logo" width="200"/>
-  
-  ### Sistema integral de gestión académica para instituciones educativas modernas
-  
-  [![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
-  [![Node.js](https://img.shields.io/badge/Node.js-18.x-green.svg)](https://nodejs.org/)
-  [![SQLite](https://img.shields.io/badge/SQLite-3.x-lightgrey.svg)](https://www.sqlite.org/)
-  [![Electron](https://img.shields.io/badge/Electron-33.x-purple.svg)](https://www.electronjs.org/)
-  [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-</div>
+Sistema moderno de gestión académica con interfaz premium, diseñado para instituciones educativas que buscan digitalizar y optimizar el control de calificaciones, estudiantes y reportes.
 
----
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## 🌟 Características Principales
+## ✨ Características Principales
 
-- ✅ **Gestión de Estudiantes** - CRUD completo con búsqueda avanzada
-- ✅ **Gestión de Materias** - Configuración flexible de componentes de evaluación
-- ✅ **Inscripciones** - Sistema de matriculación por materia
-- ✅ **Calificaciones** - Registro y cálculo automático de notas
-- ✅ **Reportes PDF** - Generación de reportes individuales y consolidados
-- ✅ **Dashboard Interactivo** - Estadísticas en tiempo real
-- ✅ **Calendario Académico** - Visualización de eventos y actividades
-- ✅ **Aplicación de Escritorio** - Versión nativa con Electron
-- ✅ **Responsive Design** - Funciona en móviles, tablets y desktop
+### 📊 Gestión Académica Completa
+- **Dashboard Interactivo**: Visualización en tiempo real de estadísticas clave
+- **Gestión de Estudiantes**: CRUD completo con información detallada
+- **Gestión de Materias**: Control de asignaturas, créditos y componentes de evaluación
+- **Sistema de Inscripciones**: Vinculación estudiante-materia con seguimiento
+- **Calificaciones Avanzadas**: Registro de notas por tipo (tareas, exámenes, proyectos)
+- **Cálculo Automático**: Promedios ponderados y acumulados en tiempo real
 
----
+### 📱 Comunicación Integrada
+- **Reportes PDF**: Generación automática de boletines individuales y consolidados
+- **WhatsApp Gratuito**: Envío de reportes vía WhatsApp Web (sin costos)
+- **Email Masivo**: Distribución de reportes por correo electrónico
+- **Notificaciones**: Sistema de alertas en tiempo real
 
-## 🚀 Tecnologías Utilizadas
+### 🎨 Diseño Premium
+- **Glassmorphism**: Efectos modernos de vidrio esmerilado
+- **Animaciones Fluidas**: Transiciones suaves con Framer Motion
+- **Responsive**: Adaptable a cualquier dispositivo
+- **Tema Personalizable**: Paleta de colores profesional
+
+## 🚀 Tecnologías
 
 ### Frontend
-- **React 18** - Biblioteca de UI
+- **React 18** - Framework de UI
 - **Vite** - Build tool ultrarrápido
 - **Styled Components** - CSS-in-JS
-- **Framer Motion** - Animaciones fluidas
-- **React Router** - Navegación SPA
-- **Lucide React** - Iconos modernos
+- **Framer Motion** - Animaciones
+- **React Router** - Navegación
+- **Lucide React** - Iconografía moderna
 
 ### Backend
-- **Node.js** - Runtime de JavaScript
-- **Express** - Framework web
+- **Node.js + Express** - Servidor REST API
 - **SQLite** - Base de datos embebida
-- **bcryptjs** - Encriptación de contraseñas
+- **Better-SQLite3** - Driver de alto rendimiento
 
 ### Desktop
-- **Electron** - Aplicación de escritorio
-- **Electron Builder** - Creación de instaladores
+- **Tauri** - Aplicación nativa multiplataforma
+- **Rust** - Backend de alto rendimiento
 
-### PDF & Reports
-- **jsPDF** - Generación de PDFs
-- **jsPDF-AutoTable** - Tablas en PDFs
+### Servicios
+- **WhatsApp Web.js** - Integración WhatsApp gratuita
+- **jsPDF + AutoTable** - Generación de PDFs
+- **SendGrid** - Servicio de emails (opcional)
 
----
+## 📦 Instalación
 
-## 📋 Requisitos Previos
+### Prerrequisitos
+- Node.js 18+ 
+- npm o yarn
+- Rust (para build de Tauri)
 
-- **Node.js** 18.x o superior
-- **npm** 9.x o superior
-- **Git** (para clonar el repositorio)
-
----
-
-## 🔧 Instalación
-
-### 1. Clonar el Repositorio
+### Instalación Rápida
 
 ```bash
-git clone https://github.com/TU_USUARIO/grade-manager.git
-cd grade-manager
-```
+# Clonar repositorio
+git clone https://github.com/Dauris11/gradeapp.git
+cd gradeapp
 
-### 2. Instalar Dependencias
-
-#### Frontend
-```bash
+# Instalar dependencias del frontend
 npm install
-```
 
-#### Backend
-```bash
+# Instalar dependencias del backend
 cd backend
 npm install
 cd ..
 ```
 
----
-
 ## 🎯 Uso
 
-### Modo Desarrollo (Web)
+### Modo Desarrollo Web
 
-#### Terminal 1 - Backend
 ```bash
+# Terminal 1 - Backend
 cd backend
 npm start
-```
 
-#### Terminal 2 - Frontend
-```bash
+# Terminal 2 - Frontend
 npm run dev
 ```
 
-La aplicación estará disponible en: `http://localhost:5173`
+Accede a `http://localhost:5173`
 
-**Credenciales por defecto:**
-- Usuario: `admin`
-- Contraseña: `admin123`
+### Modo Desktop (Tauri)
 
----
-
-### Modo Desktop (Electron)
-
-#### Desarrollo
 ```bash
-# Asegúrate de que el backend esté corriendo
-cd backend
-npm start
+# Desarrollo
+npm run tauri:dev
 
-# En otra terminal
-npm run electron:dev
+# Build para producción
+npm run tauri:build
 ```
 
-#### Crear Instalador Windows
-```bash
-npm run build
-npm run electron:build
+## 🔐 Credenciales por Defecto
+
+- **Usuario**: `admin`
+- **Contraseña**: `admin123`
+
+⚠️ **Importante**: Cambia estas credenciales en producción.
+
+## 📱 Configuración de WhatsApp
+
+1. Inicia el backend: `cd backend && npm start`
+2. Escanea el código QR que aparece en la terminal
+3. Alternativamente, usa el modal de WhatsApp en la app
+4. Una vez conectado, puedes enviar reportes masivos
+
+## 📧 Configuración de Email (Opcional)
+
+Crea un archivo `.env` en la carpeta `backend`:
+
+```env
+SENDGRID_API_KEY=tu_api_key_aqui
+FROM_EMAIL=noreply@tudominio.com
+FROM_NAME=Tu Institución
+REPLY_TO_EMAIL=soporte@tudominio.com
 ```
 
-El instalador estará en: `dist-electron/GradeApp-0.0.0-x64.exe`
-
----
-
-## 📁 Estructura del Proyecto
+## 🗂️ Estructura del Proyecto
 
 ```
 grade-manager/
-├── backend/                    # Servidor Node.js/Express
-│   ├── server.js              # Punto de entrada del backend
-│   ├── routes/                # Rutas de la API
-│   ├── database.js            # Configuración de SQLite
-│   └── grade_manager.db       # Base de datos SQLite
-├── electron/                   # Configuración de Electron
-│   └── main.cjs               # Proceso principal de Electron
-├── public/                     # Archivos estáticos
-│   └── imagenes/              # Imágenes y logos
-├── src/                        # Código fuente del frontend
-│   ├── components/            # Componentes reutilizables
-│   ├── pages/                 # Páginas de la aplicación
-│   ├── services/              # Servicios (API, PDF, Email)
-│   ├── theme.js               # Configuración de tema
-│   ├── App.jsx                # Componente principal
-│   └── main.jsx               # Punto de entrada
-├── .gitignore                 # Archivos ignorados por Git
-├── electron-builder.json      # Configuración de Electron Builder
-├── package.json               # Dependencias y scripts
-├── vite.config.js             # Configuración de Vite
-└── README.md                  # Este archivo
+├── src/                    # Código fuente React
+│   ├── components/         # Componentes reutilizables
+│   ├── pages/             # Páginas de la aplicación
+│   ├── services/          # Servicios y APIs
+│   └── theme.js           # Configuración de tema
+├── backend/               # Servidor Node.js
+│   ├── server.js          # Servidor Express
+│   ├── database.js        # Configuración SQLite
+│   └── whatsappServiceFree.js  # Servicio WhatsApp
+├── src-tauri/            # Configuración Tauri
+├── public/               # Archivos estáticos
+└── electron-main/        # Configuración Electron (legacy)
 ```
-
----
 
 ## 🎨 Capturas de Pantalla
 
 ### Dashboard
-![Dashboard](docs/screenshots/dashboard.png)
+Panel principal con estadísticas en tiempo real y accesos rápidos.
 
-### Gestión de Estudiantes
-![Estudiantes](docs/screenshots/students.png)
+### Gestión de Notas
+Interfaz intuitiva para registro y seguimiento de calificaciones.
 
-### Gestión de Materias
-![Materias](docs/screenshots/subjects.png)
+### Reportes
+Generación automática de PDFs con diseño profesional.
 
-### Reportes PDF
-![Reportes](docs/screenshots/reports.png)
+## 🔧 Scripts Disponibles
 
----
-
-## 📊 API Endpoints
-
-### Autenticación
-- `POST /api/login` - Iniciar sesión
-
-### Estudiantes
-- `GET /api/students` - Listar estudiantes
-- `POST /api/students` - Crear estudiante
-- `PUT /api/students/:id` - Actualizar estudiante
-- `DELETE /api/students/:id` - Eliminar estudiante
-
-### Materias
-- `GET /api/subjects` - Listar materias
-- `POST /api/subjects` - Crear materia
-- `PUT /api/subjects/:id` - Actualizar materia
-- `DELETE /api/subjects/:id` - Eliminar materia
-
-### Inscripciones
-- `GET /api/enrollments` - Listar inscripciones
-- `POST /api/enrollments` - Crear inscripción
-- `DELETE /api/enrollments/:id` - Eliminar inscripción
-
-### Calificaciones
-- `GET /api/grades` - Listar calificaciones
-- `POST /api/grades` - Crear calificación
-- `PUT /api/grades/:id` - Actualizar calificación
-- `DELETE /api/grades/:id` - Eliminar calificación
-
----
-
-## 🔐 Seguridad
-
-- ✅ Contraseñas encriptadas con bcrypt
-- ✅ Validación de datos en backend
-- ✅ Context isolation en Electron
-- ✅ Prevención de inyección SQL
-
----
-
-## 🛠️ Scripts Disponibles
-
-| Script | Descripción |
-|--------|-------------|
-| `npm run dev` | Inicia servidor de desarrollo (Vite) |
-| `npm run build` | Construye para producción |
-| `npm run preview` | Vista previa del build |
-| `npm run electron` | Ejecuta Electron |
-| `npm run electron:dev` | Desarrollo con Electron |
-| `npm run electron:build` | Crea instalador Windows |
-
----
-
-## 🐛 Solución de Problemas
-
-### Error: "Port 5173 already in use"
 ```bash
-# Mata el proceso en el puerto 5173
-npx kill-port 5173
+# Desarrollo
+npm run dev              # Vite dev server
+npm run tauri:dev        # Tauri desktop app
+
+# Build
+npm run build            # Build producción web
+npm run tauri:build      # Build desktop app
+
+# Backend
+cd backend && npm start  # Iniciar servidor
 ```
-
-### Error: "Cannot find module"
-```bash
-# Reinstala dependencias
-rm -rf node_modules
-npm install
-```
-
-### Base de datos corrupta
-```bash
-# Elimina la base de datos y reinicia el backend
-cd backend
-rm grade_manager.db
-npm start
-```
-
----
-
-## 📝 Roadmap
-
-- [ ] Sistema de notificaciones por email
-- [ ] Exportación a Excel
-- [ ] Gráficos de rendimiento
-- [ ] Modo oscuro
-- [ ] Multi-idioma (i18n)
-- [ ] Aplicación móvil (React Native)
-- [ ] Integración con Google Classroom
-
----
 
 ## 🤝 Contribuir
 
@@ -276,33 +178,21 @@ Las contribuciones son bienvenidas. Por favor:
 4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abre un Pull Request
 
----
+## 📝 Licencia
 
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
-
----
+Este proyecto está bajo la Licencia MIT. Ver archivo `LICENSE` para más detalles.
 
 ## 👨‍💻 Autor
 
-**Tu Nombre**
-- GitHub: [@tu-usuario](https://github.com/tu-usuario)
-- Email: tu-email@ejemplo.com
-
----
+**Dauris Reyes**
+- GitHub: [@Dauris11](https://github.com/Dauris11)
 
 ## 🙏 Agradecimientos
 
-- [React](https://reactjs.org/)
-- [Vite](https://vitejs.dev/)
-- [Electron](https://www.electronjs.org/)
-- [Styled Components](https://styled-components.com/)
-- [Framer Motion](https://www.framer.com/motion/)
+- Diseño inspirado en las mejores prácticas de UI/UX modernas
+- Comunidad de React y Tauri por sus excelentes herramientas
+- Todos los contribuidores que hacen posible este proyecto
 
 ---
 
-<div align="center">
-  <p>Hecho con ❤️ para la educación</p>
-  <p>⭐ Si te gusta este proyecto, dale una estrella en GitHub ⭐</p>
-</div>
+⭐ Si este proyecto te fue útil, considera darle una estrella en GitHub!

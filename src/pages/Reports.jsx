@@ -9,235 +9,268 @@ import {
     BookOpen,
     CheckCircle,
     XCircle,
-    Loader
+    Loader,
+    X,
+    Settings,
+    MessageCircle,
+    ChevronRight,
+    Search,
+    AlertCircle,
+    Send,
+    CheckCircle2
 } from 'lucide-react';
 import { studentsAPI, enrollmentsAPI, gradesAPI } from '../services/database';
 import PDFService from '../services/pdfService';
 import EmailService from '../services/emailService';
+import WhatsAppService from '../services/whatsappService';
 import { Toast, useToast } from '../components/Toast';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.lg};
+  gap: ${props => props.theme.spacing.xl};
+  padding-bottom: 40px;
 `;
 
-const Header = styled.div``;
+const Header = styled.div`
+    margin-bottom: ${props => props.theme.spacing.md};
+`;
 
 const Title = styled.h1`
-  font-size: ${props => props.theme.typography.fontSize['3xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
-  margin-bottom: ${props => props.theme.spacing.sm};
+  font-size: 36px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.slate[900]};
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
 `;
 
 const Subtitle = styled.p`
+  font-size: 16px;
   color: ${props => props.theme.colors.slate[500]};
+  font-weight: 500;
 `;
 
 const ActionsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: ${props => props.theme.spacing.lg};
-  margin-bottom: ${props => props.theme.spacing.xl};
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
 `;
 
 const ActionCard = styled(motion.div)`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.lg};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-  padding: ${props => props.theme.spacing.xl};
+  ${props => props.theme.glassmorphism}
+  border-radius: 28px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  gap: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 60px;
+    height: 60px;
+    background: ${props => props.$accent};
+    filter: blur(40px);
+    opacity: 0.15;
+  }
 `;
 
-const ActionIcon = styled.div`
-  width: 3.5rem;
-  height: 3.5rem;
-  background: ${props => props.$bgColor};
-  border-radius: ${props => props.theme.borderRadius.xl};
+const IconWrapper = styled.div`
+  width: 56px;
+  height: 56px;
+  background: ${props => props.bg};
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: ${props => props.color};
-  margin-bottom: ${props => props.theme.spacing.sm};
 `;
 
 const ActionTitle = styled.h3`
-  font-size: ${props => props.theme.typography.fontSize.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
+  font-size: 20px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.slate[900]};
+  letter-spacing: -0.02em;
 `;
 
 const ActionDescription = styled.p`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.slate[600]};
-  line-height: 1.5;
+  font-size: 14px;
+  color: ${props => props.theme.colors.slate[500]};
+  line-height: 1.6;
   flex: 1;
 `;
 
-const ActionButton = styled(motion.button)`
-  background: ${props => props.theme.colors.gradients.blue};
+const MainButton = styled(motion.button)`
+  background: ${props => props.bg || props.theme.colors.gradients.primary};
   color: white;
-  padding: ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  border: none;
-  cursor: pointer;
+  padding: 14px;
+  border-radius: 16px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: ${props => props.theme.spacing.sm};
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+  gap: 10px;
+  border: none;
+  cursor: pointer;
+  box-shadow: ${props => props.shadow || '0 8px 20px rgba(99, 102, 241, 0.2)'};
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
   }
 `;
 
 const StudentsSection = styled.div`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.lg};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-  padding: ${props => props.theme.spacing.xl};
-`;
-
-const SectionTitle = styled.h2`
-  font-size: ${props => props.theme.typography.fontSize['2xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
-  margin-bottom: ${props => props.theme.spacing.lg};
-`;
-
-const StudentsList = styled.div`
+  ${props => props.theme.glassmorphism}
+  border-radius: 32px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.sm};
+  gap: 24px;
 `;
 
-const StudentItem = styled(motion.div)`
+const SectionHeader = styled.div`
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.slate[50]};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-`;
-
-const StudentInfo = styled.div`
-  display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
-  flex: 1;
-`;
 
-const StudentAvatar = styled.div`
-  width: 2.5rem;
-  height: 2.5rem;
-  background: ${props => props.theme.colors.gradients.purple};
-  border-radius: ${props => props.theme.borderRadius.full};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  font-size: ${props => props.theme.typography.fontSize.sm};
-`;
-
-const StudentDetails = styled.div`
-  flex: 1;
-`;
-
-const StudentName = styled.p`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  color: ${props => props.theme.colors.slate[800]};
-`;
-
-const StudentEmail = styled.p`
-  font-size: ${props => props.theme.typography.fontSize.xs};
-  color: ${props => props.theme.colors.slate[500]};
-`;
-
-const StudentActions = styled.div`
-  display: flex;
-  gap: ${props => props.theme.spacing.sm};
-`;
-
-const IconButton = styled(motion.button)`
-  width: 2.5rem;
-  height: 2.5rem;
-  background: ${props => props.$bgColor};
-  border: none;
-  border-radius: ${props => props.theme.borderRadius.lg};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: ${props => props.color};
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  @media (max-width: 640px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
   }
 `;
 
-const BulkActionsBar = styled.div`
+const BulkBar = styled.div`
+  background: ${props => props.theme.colors.gradients.primary};
+  padding: 12px 24px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${props => props.theme.spacing.md};
-  background: ${props => props.theme.colors.primary.main};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  margin-bottom: ${props => props.theme.spacing.md};
   color: white;
+  margin-bottom: 8px;
 `;
 
-const ProgressModal = styled(motion.div)`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+const SelectAllBtn = styled.button`
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+`;
+
+const StudentsGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const StudentRow = styled(motion.div)`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: ${props => props.selected ? 'rgba(99, 102, 241, 0.05)' : 'white'};
+  border: 1px solid ${props => props.selected ? props.theme.colors.primary.main + '40' : props.theme.colors.slate[100]};
+  border-radius: 20px;
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateX(8px);
+    border-color: ${props => props.theme.colors.primary.main}40;
+  }
+`;
+
+const Avatar = styled.div`
+  width: 44px;
+  height: 44px;
+  background: ${props => props.theme.colors.gradients.purple};
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: ${props => props.theme.spacing.lg};
+  color: white;
+  font-weight: 800;
+  font-size: 18px;
 `;
 
-const ProgressCard = styled(motion.div)`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  padding: ${props => props.theme.spacing.xl};
-  max-width: 500px;
-  width: 100%;
-  max-height: 80vh;
-  overflow-y: auto;
+const NameChip = styled.div`
+  flex: 1;
+  margin-left: 16px;
+  h4 { font-size: 15px; font-weight: 700; color: ${props => props.theme.colors.slate[800]}; }
+  p { font-size: 12px; color: ${props => props.theme.colors.slate[400]}; }
 `;
 
-const ProgressTitle = styled.h3`
-  font-size: ${props => props.theme.typography.fontSize.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
-  margin-bottom: ${props => props.theme.spacing.lg};
+const ActionGroup = styled.div`
+  display: flex;
+  gap: 10px;
 `;
 
-const ProgressItem = styled.div`
+const SmallIconButton = styled(motion.button)`
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: ${props => props.bg || '#F1F5F9'};
+  color: ${props => props.color || '#64748B'};
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.md};
-  padding: ${props => props.theme.spacing.sm};
-  margin-bottom: ${props => props.theme.spacing.sm};
+  justify-content: center;
+  border: none;
+  cursor: pointer;
 `;
 
-const ProgressText = styled.p`
-  flex: 1;
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.slate[600]};
+const Modal = styled(motion.div)`
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+`;
+
+const ModalBox = styled(motion.div)`
+  background: white;
+  border-radius: 32px;
+  padding: 40px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid ${props => props.theme.colors.slate[200]};
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s;
+  margin-top: 8px;
+
+  &:focus {
+    border-color: ${props => props.theme.colors.primary.main};
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  }
 `;
 
 const Reports = () => {
@@ -249,321 +282,195 @@ const Reports = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState([]);
     const [showProgress, setShowProgress] = useState(false);
+    const [showEmailConfig, setShowEmailConfig] = useState(false);
+    const [emailConfig, setEmailConfig] = useState({
+        fromEmail: 'noreply@gradeapp.com',
+        fromName: 'GradeApp - Sistema Académico',
+        replyTo: 'soporte@gradeapp.com'
+    });
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     const loadData = async () => {
         try {
-            const [studentsData, enrollmentsData, gradesData] = await Promise.all([
-                studentsAPI.getAll(),
-                enrollmentsAPI.getAll(),
-                gradesAPI.getAll()
+            const [s, e, g] = await Promise.all([
+                studentsAPI.getAll(), enrollmentsAPI.getAll(), gradesAPI.getAll()
             ]);
-
-            // Enriquecer enrollments con accumulated
-            const enrichedEnrollments = enrollmentsData.map(enrollment => {
-                const accumulated = gradesAPI.calculateAccumulated ? gradesAPI.calculateAccumulated(enrollment.id) : null;
-                return {
-                    ...enrollment,
-                    accumulated: accumulated?.accumulated || null
-                };
-            });
-
-            setStudents(studentsData);
-            setEnrollments(enrichedEnrollments);
-            setGrades(gradesData);
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            toast.error('Error al cargar los datos', 'Error');
-            setStudents([]);
-            setEnrollments([]);
-            setGrades([]);
-        }
+            setStudents(s);
+            setEnrollments(e.map(item => ({ ...item, accumulated: gradesAPI.calculateAccumulated?.(item.id)?.accumulated || null })));
+            setGrades(g);
+        } catch (err) { toast.error('Error al cargar datos'); }
     };
 
     const handleGenerateConsolidatedPDF = async () => {
         try {
             setIsProcessing(true);
-            toast.info('Generando reporte consolidado...', 'Procesando');
-
-            console.log('Iniciando generación de PDF consolidado...');
-            console.log('Estudiantes:', students.length);
-            console.log('Inscripciones:', enrollments.length);
-            console.log('Calificaciones:', grades.length);
-
             const doc = await PDFService.generateConsolidatedReport(students, enrollments, grades);
-
-            console.log('PDF generado exitosamente');
             PDFService.downloadPDF(doc, `Reporte_Consolidado_${Date.now()}.pdf`);
-
-            toast.success('Reporte consolidado generado exitosamente', 'Éxito');
-        } catch (error) {
-            console.error('Error al generar reporte consolidado:', error);
-            toast.error(`Error al generar el reporte: ${error.message}`, 'Error');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
-
-    const handleGenerateStudentPDF = async (student) => {
-        try {
-            console.log('Generando PDF para:', student.name);
-            const studentEnrollments = enrollments.filter(e => e.studentId === student.id);
-            console.log('Inscripciones del estudiante:', studentEnrollments.length);
-
-            const doc = await PDFService.generateStudentReport(student, studentEnrollments, grades);
-            PDFService.downloadPDF(doc, `Reporte_${student.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
-
-            toast.success(`Reporte de ${student.name} descargado`, 'Éxito');
-        } catch (error) {
-            console.error(`Error al generar reporte de ${student.name}:`, error);
-            toast.error(`Error: ${error.message}`, 'Error');
-        }
-    };
-
-    const handleSendStudentEmail = async (student) => {
-        try {
-            const studentEnrollments = enrollments.filter(e => e.studentId === student.id);
-            const doc = await PDFService.generateStudentReport(student, studentEnrollments, grades);
-            const pdfBlob = PDFService.getPDFBlob(doc);
-
-            const result = await EmailService.sendStudentReport(student, pdfBlob);
-
-            if (result.success) {
-                toast.success(`Email enviado a ${student.name}`, 'Éxito');
-            }
-        } catch (error) {
-            toast.error(`Error al enviar email a ${student.name}`, 'Error');
-        }
+            toast.success('Reporte consolidado generado');
+        } catch (error) { toast.error('Error al generar PDF'); }
+        finally { setIsProcessing(false); }
     };
 
     const handleSendBulkEmails = async () => {
-        if (selectedStudents.length === 0) {
-            toast.warning('Selecciona al menos un estudiante', 'Advertencia');
-            return;
-        }
-
-        setIsProcessing(true);
-        setShowProgress(true);
-        setProgress([]);
-
+        if (selectedStudents.length === 0) return toast.warning('Selecciona estudiantes');
+        setIsProcessing(true); setShowProgress(true); setProgress([]);
         const reports = [];
-
-        for (const studentId of selectedStudents) {
-            const student = students.find(s => s.id === studentId);
-            const studentEnrollments = enrollments.filter(e => e.studentId === studentId);
-
+        for (const id of selectedStudents) {
+            const student = students.find(s => s.id === id);
             try {
-                const doc = await PDFService.generateStudentReport(student, studentEnrollments, grades);
-                const pdfBlob = PDFService.getPDFBlob(doc);
-
-                reports.push({ student, pdfBlob });
-
-                setProgress(prev => [...prev, {
-                    student: student.name,
-                    status: 'generated',
-                    message: 'PDF generado'
-                }]);
-            } catch (error) {
-                setProgress(prev => [...prev, {
-                    student: student.name,
-                    status: 'error',
-                    message: 'Error al generar PDF'
-                }]);
-            }
+                const doc = await PDFService.generateStudentReport(student, enrollments.filter(e => e.studentId === id), grades);
+                reports.push({ student, pdfBlob: PDFService.getPDFBlob(doc) });
+                setProgress(p => [...p, { name: student.name, status: 'generated' }]);
+            } catch (err) { setProgress(p => [...p, { name: student.name, status: 'error' }]); }
         }
-
-        // Enviar emails
         const results = await EmailService.sendBulkReports(reports);
-
-        results.forEach(result => {
-            setProgress(prev => prev.map(p =>
-                p.student === result.student
-                    ? { ...p, status: result.success ? 'sent' : 'error', message: result.success ? 'Email enviado' : result.error }
-                    : p
-            ));
-        });
-
-        const successCount = results.filter(r => r.success).length;
-        toast.success(`${successCount} de ${results.length} emails enviados exitosamente`, 'Proceso Completado');
-
+        results.forEach(res => setProgress(p => p.map(it => it.name === res.student ? { ...it, status: res.success ? 'sent' : 'error' } : it)));
+        toast.success('Envío completado');
         setIsProcessing(false);
-        setSelectedStudents([]);
     };
 
-    const toggleStudentSelection = (studentId) => {
-        setSelectedStudents(prev =>
-            prev.includes(studentId)
-                ? prev.filter(id => id !== studentId)
-                : [...prev, studentId]
-        );
+    const handleSendBulkWhatsApp = async () => {
+        if (selectedStudents.length === 0) return toast.warning('Selecciona estudiantes');
+        setIsProcessing(true); setShowProgress(true); setProgress([]);
+        const selected = students.filter(s => selectedStudents.includes(s.id));
+        const messages = selected.filter(s => s.phone).map(s => ({
+            to: s.phone, message: WhatsAppService.generateReportMessage(s), student: s.name
+        }));
+        await WhatsAppService.sendBulkMessages(messages, (pData) => {
+            setProgress(prev => {
+                const existing = prev.find(x => x.name === pData.student);
+                if (existing) return prev.map(x => x.name === pData.student ? { ...x, status: pData.status === 'success' ? 'sent' : 'error' } : x);
+                return [...prev, { name: pData.student, status: pData.status === 'success' ? 'sent' : 'error' }];
+            });
+        });
+        toast.success('Envío WhatsApp completado');
+        setIsProcessing(false);
     };
 
-    const toggleSelectAll = () => {
-        setSelectedStudents(prev =>
-            prev.length === students.length ? [] : students.map(s => s.id)
-        );
-    };
+    const toggleSelection = (id) => setSelectedStudents(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
     return (
         <Container>
             <Toast toasts={toast.toasts} removeToast={toast.removeToast} />
-
             <Header>
-                <Title>Reportes y Calificaciones</Title>
-                <Subtitle>Genera y envía reportes académicos en PDF</Subtitle>
+                <Title>Centro de Reportes</Title>
+                <Subtitle>Generación de boletines, envíos masivos y reportes administrativos</Subtitle>
             </Header>
 
             <ActionsGrid>
-                <ActionCard
-                    whileHover={{ y: -5 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <ActionIcon $bgColor="rgba(59, 130, 246, 0.1)" color="#3B82F6">
-                        <FileText size={28} />
-                    </ActionIcon>
-                    <ActionTitle>Reporte Consolidado</ActionTitle>
-                    <ActionDescription>
-                        Genera un reporte PDF con las calificaciones de todos los estudiantes en formato de tabla consolidada.
-                    </ActionDescription>
-                    <ActionButton
-                        onClick={handleGenerateConsolidatedPDF}
-                        disabled={isProcessing}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {isProcessing ? <Loader className="animate-spin" size={18} /> : <Download size={18} />}
-                        Generar PDF
-                    </ActionButton>
+                <ActionCard $accent="#6366F1" whileHover={{ y: -5 }}>
+                    <IconWrapper bg="rgba(99, 102, 241, 0.1)" color="#6366F1"><FileText size={26} /></IconWrapper>
+                    <ActionTitle>Consolidado General</ActionTitle>
+                    <ActionDescription>Exporta una tabla dinámica con el rendimiento de todos los alumnos inscritos actualmente.</ActionDescription>
+                    <MainButton onClick={handleGenerateConsolidatedPDF} disabled={isProcessing}>
+                        {isProcessing ? <Loader className="animate-spin" size={18} /> : <Download size={18} />} Descargar Tabla
+                    </MainButton>
                 </ActionCard>
 
-                <ActionCard
-                    whileHover={{ y: -5 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <ActionIcon $bgColor="rgba(34, 197, 94, 0.1)" color="#22C55E">
-                        <Mail size={28} />
-                    </ActionIcon>
-                    <ActionTitle>Envío Masivo</ActionTitle>
-                    <ActionDescription>
-                        Selecciona estudiantes y envía sus reportes individuales por email de forma automática.
-                    </ActionDescription>
-                    <ActionButton
-                        onClick={handleSendBulkEmails}
-                        disabled={isProcessing || selectedStudents.length === 0}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {isProcessing ? <Loader className="animate-spin" size={18} /> : <Mail size={18} />}
-                        Enviar Seleccionados ({selectedStudents.length})
-                    </ActionButton>
+                <ActionCard $accent="#10B981" whileHover={{ y: -5 }}>
+                    <IconWrapper bg="rgba(16, 185, 129, 0.1)" color="#10B981"><Mail size={26} /></IconWrapper>
+                    <ActionTitle>Envío por Correo</ActionTitle>
+                    <ActionDescription>Envía los boletines individuales en formato PDF directamente a los correos de los padres.</ActionDescription>
+                    <MainButton bg="linear-gradient(135deg, #10B981 0%, #059669 100%)" shadow="0 8px 20px rgba(16, 185, 129, 0.2)"
+                        onClick={handleSendBulkEmails} disabled={isProcessing || selectedStudents.length === 0}>
+                        <Send size={18} /> Enviar Emails ({selectedStudents.length})
+                    </MainButton>
+                </ActionCard>
+
+                <ActionCard $accent="#F59E0B" whileHover={{ y: -5 }}>
+                    <IconWrapper bg="rgba(245, 158, 11, 0.1)" color="#F59E0B"><MessageCircle size={26} /></IconWrapper>
+                    <ActionTitle>WhatsApp Masivo</ActionTitle>
+                    <ActionDescription>Comunícate directamente con los tutores enviando el resumen de notas por WhatsApp.</ActionDescription>
+                    <MainButton bg="linear-gradient(135deg, #F59E0B 0%, #D97706 100%)" shadow="0 8px 20px rgba(245, 158, 11, 0.2)"
+                        onClick={handleSendBulkWhatsApp} disabled={isProcessing || selectedStudents.length === 0}>
+                        <MessageCircle size={18} /> WhatsApp ({selectedStudents.length})
+                    </MainButton>
+                </ActionCard>
+
+                <ActionCard $accent="#8B5CF6" whileHover={{ y: -5 }}>
+                    <IconWrapper bg="rgba(139, 92, 246, 0.1)" color="#8B5CF6"><Settings size={26} /></IconWrapper>
+                    <ActionTitle>Configuración</ActionTitle>
+                    <ActionDescription>Personaliza los datos del remitente y el contenido de los mensajes automáticos.</ActionDescription>
+                    <MainButton bg="#F1F5F9" color="#475569" shadow="none" onClick={() => setShowEmailConfig(true)}>
+                        <Settings size={18} /> Ajustes
+                    </MainButton>
                 </ActionCard>
             </ActionsGrid>
 
             <StudentsSection>
-                <SectionTitle>Estudiantes</SectionTitle>
+                <SectionHeader>
+                    <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em' }}>Listado de Estudiantes</h2>
+                    <div style={{ position: 'relative' }}>
+                        <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                        <Input placeholder="Buscar alumno..." style={{ width: '240px', padding: '10px 12px 10px 40px', marginTop: 0 }} />
+                    </div>
+                </SectionHeader>
 
                 {students.length > 0 && (
-                    <BulkActionsBar>
-                        <span>{selectedStudents.length} de {students.length} seleccionados</span>
-                        <ActionButton
-                            onClick={toggleSelectAll}
-                            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            {selectedStudents.length === students.length ? 'Deseleccionar Todos' : 'Seleccionar Todos'}
-                        </ActionButton>
-                    </BulkActionsBar>
+                    <BulkBar>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600' }}>
+                            <CheckCircle2 size={16} /> {selectedStudents.length} seleccionados
+                        </div>
+                        <SelectAllBtn onClick={() => setSelectedStudents(selectedStudents.length === students.length ? [] : students.map(s => s.id))}>
+                            {selectedStudents.length === students.length ? 'Deseleccionar' : 'Seleccionar Todo'}
+                        </SelectAllBtn>
+                    </BulkBar>
                 )}
 
-                <StudentsList>
-                    {students.map(student => (
-                        <StudentItem
-                            key={student.id}
-                            whileHover={{ x: 5 }}
-                        >
-                            <StudentInfo>
-                                <input
-                                    type="checkbox"
-                                    checked={selectedStudents.includes(student.id)}
-                                    onChange={() => toggleStudentSelection(student.id)}
-                                    style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer' }}
-                                />
-                                <StudentAvatar>
-                                    {student.name.charAt(0).toUpperCase()}
-                                </StudentAvatar>
-                                <StudentDetails>
-                                    <StudentName>{student.name}</StudentName>
-                                    <StudentEmail>{student.email}</StudentEmail>
-                                </StudentDetails>
-                            </StudentInfo>
-                            <StudentActions>
-                                <IconButton
-                                    $bgColor="rgba(59, 130, 246, 0.1)"
-                                    color="#3B82F6"
-                                    onClick={() => handleGenerateStudentPDF(student)}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    title="Descargar PDF"
-                                >
-                                    <Download size={18} />
-                                </IconButton>
-                                <IconButton
-                                    $bgColor="rgba(34, 197, 94, 0.1)"
-                                    color="#22C55E"
-                                    onClick={() => handleSendStudentEmail(student)}
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    title="Enviar por Email"
-                                >
-                                    <Mail size={18} />
-                                </IconButton>
-                            </StudentActions>
-                        </StudentItem>
+                <StudentsGrid>
+                    {students.map(s => (
+                        <StudentRow key={s.id} selected={selectedStudents.includes(s.id)} onClick={() => toggleSelection(s.id)}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                <input type="checkbox" checked={selectedStudents.includes(s.id)} readOnly style={{ width: '18px', height: '18px' }} />
+                                <Avatar>{s.name.charAt(0)}</Avatar>
+                                <NameChip>
+                                    <h4>{s.name}</h4>
+                                    <p>{s.email || 'Sin correo registrado'}</p>
+                                </NameChip>
+                            </div>
+                            <ActionGroup onClick={e => e.stopPropagation()}>
+                                <SmallIconButton color="#6366F1" bg="#EEF2FF" onClick={() => PDFService.downloadPDF(PDFService.generateStudentReport(s, enrollments.filter(e => e.studentId === s.id), grades), `Reporte_${s.name}.pdf`)}><Download size={16} /></SmallIconButton>
+                                <SmallIconButton color="#10B981" bg="#ECFDF5" onClick={() => WhatsAppService.sendMessage(s.phone, WhatsAppService.generateReportMessage(s))}><MessageCircle size={16} /></SmallIconButton>
+                            </ActionGroup>
+                        </StudentRow>
                     ))}
-                </StudentsList>
+                </StudentsGrid>
             </StudentsSection>
 
             <AnimatePresence>
                 {showProgress && (
-                    <ProgressModal
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => !isProcessing && setShowProgress(false)}
-                    >
-                        <ProgressCard
-                            initial={{ scale: 0.9 }}
-                            animate={{ scale: 1 }}
-                            exit={{ scale: 0.9 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <ProgressTitle>Progreso de Envío</ProgressTitle>
-                            {progress.map((item, index) => (
-                                <ProgressItem key={index}>
-                                    {item.status === 'generated' && <Loader className="animate-spin" size={20} color="#3B82F6" />}
-                                    {item.status === 'sent' && <CheckCircle size={20} color="#22C55E" />}
-                                    {item.status === 'error' && <XCircle size={20} color="#EF4444" />}
-                                    <ProgressText>
-                                        <strong>{item.student}</strong>: {item.message}
-                                    </ProgressText>
-                                </ProgressItem>
-                            ))}
-                            {!isProcessing && (
-                                <ActionButton
-                                    onClick={() => setShowProgress(false)}
-                                    style={{ marginTop: '1rem' }}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    Cerrar
-                                </ActionButton>
-                            )}
-                        </ProgressCard>
-                    </ProgressModal>
+                    <Modal initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => !isProcessing && setShowProgress(false)}>
+                        <ModalBox initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+                            <h3 style={{ fontSize: '22px', fontWeight: '800', marginBottom: '24px' }}>Procesando Solicitudes</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {progress.map((p, i) => (
+                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#F8FAFC', borderRadius: '14px' }}>
+                                        {p.status === 'sent' ? <CheckCircle2 size={18} color="#10B981" /> : p.status === 'error' ? <XCircle size={18} color="#EF4444" /> : <Loader size={18} className="animate-spin" color="#6366F1" />}
+                                        <div style={{ flex: 1, fontSize: '14px', fontWeight: '600' }}>{p.name}</div>
+                                        <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', color: p.status === 'sent' ? '#10B981' : '#94a3b8' }}>{p.status}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            {!isProcessing && <MainButton style={{ width: '100%', marginTop: '32px' }} onClick={() => setShowProgress(false)}>Finalizar</MainButton>}
+                        </ModalBox>
+                    </Modal>
+                )}
+
+                {showEmailConfig && (
+                    <Modal initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEmailConfig(false)}>
+                        <ModalBox initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                                <h3 style={{ fontSize: '22px', fontWeight: '800' }}>Configuración</h3>
+                                <IconButton onClick={() => setShowEmailConfig(false)}><X size={20} /></IconButton>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div><label style={{ fontSize: '14px', fontWeight: '700' }}>Remitente</label><Input value={emailConfig.fromName} onChange={e => setEmailConfig({ ...emailConfig, fromName: e.target.value })} /></div>
+                                <div><label style={{ fontSize: '14px', fontWeight: '700' }}>Email de origen</label><Input value={emailConfig.fromEmail} onChange={e => setEmailConfig({ ...emailConfig, fromEmail: e.target.value })} /></div>
+                                <MainButton style={{ marginTop: '12px' }} onClick={() => { EmailService.setInstitutionalEmail(emailConfig.fromEmail, emailConfig.fromName, emailConfig.replyTo); setShowEmailConfig(false); toast.success('Ajustes guardados'); }}>Guardar Cambios</MainButton>
+                            </div>
+                        </ModalBox>
+                    </Modal>
                 )}
             </AnimatePresence>
         </Container>

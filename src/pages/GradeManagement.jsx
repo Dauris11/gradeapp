@@ -5,7 +5,6 @@ import { useSearchParams } from 'react-router-dom';
 import {
     Award,
     Plus,
-    Edit,
     Trash2,
     BookOpen,
     Users,
@@ -13,7 +12,12 @@ import {
     ClipboardCheck,
     X,
     TrendingUp,
-    Download
+    Download,
+    CheckCircle2,
+    AlertCircle,
+    Calendar,
+    ChevronRight,
+    Search
 } from 'lucide-react';
 import { enrollmentsAPI, gradesAPI, studentsAPI } from '../services/database';
 import PDFService from '../services/pdfService';
@@ -21,297 +25,301 @@ import PDFService from '../services/pdfService';
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.lg};
+  gap: ${props => props.theme.spacing.xl};
+  padding-bottom: 40px;
+`;
+
+const Header = styled.div`
+    margin-bottom: ${props => props.theme.spacing.md};
 `;
 
 const Title = styled.h1`
-  font-size: ${props => props.theme.typography.fontSize['3xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
-  margin-bottom: ${props => props.theme.spacing.sm};
+  font-size: 36px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.slate[900]};
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
 `;
 
 const Subtitle = styled.p`
+  font-size: 16px;
   color: ${props => props.theme.colors.slate[500]};
+  font-weight: 500;
 `;
 
 const FiltersCard = styled.div`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.lg};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-  padding: ${props => props.theme.spacing.lg};
+  ${props => props.theme.glassmorphism}
+  border-radius: 24px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const Label = styled.label`
+  font-size: 14px;
+  font-weight: 700;
+  color: ${props => props.theme.colors.slate[700]};
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 const Select = styled.select`
   width: 100%;
-  background: ${props => props.theme.colors.slate[50]};
+  background: white;
   border: 1px solid ${props => props.theme.colors.slate[200]};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  padding: ${props => props.theme.spacing.md};
+  border-radius: 14px;
+  padding: 14px;
+  font-size: 15px;
   color: ${props => props.theme.colors.slate[800]};
   outline: none;
+  transition: all 0.2s;
+  cursor: pointer;
 
   &:focus {
     border-color: ${props => props.theme.colors.primary.main};
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
   }
 `;
 
 const EnrollmentCard = styled(motion.div)`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.lg};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
+  ${props => props.theme.glassmorphism}
+  border-radius: 28px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
 `;
 
 const ColorBar = styled.div`
-  height: 0.5rem;
+  height: 6px;
   background: linear-gradient(to right, ${props => props.color});
 `;
 
 const CardContent = styled.div`
-  padding: ${props => props.theme.spacing.lg};
+  padding: 32px;
 `;
 
 const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: ${props => props.theme.spacing.md};
-  padding-bottom: ${props => props.theme.spacing.md};
-  border-bottom: 1px solid ${props => props.theme.colors.slate[200]};
+  margin-bottom: 24px;
+
+  @media (max-width: 640px) {
+    flex-direction: column;
+    gap: 20px;
+  }
 `;
 
-const StudentInfo = styled.div``;
-
-const StudentName = styled.h3`
-  font-size: ${props => props.theme.typography.fontSize.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
+const StudentInfo = styled.div`
+    h3 {
+        font-size: 24px;
+        font-weight: 800;
+        color: ${props => props.theme.colors.slate[900]};
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+    }
 `;
 
-const SubjectName = styled.p`
-  font-size: ${props => props.theme.typography.fontSize.sm};
+const InfoRow = styled.div`
+  font-size: 14px;
   color: ${props => props.theme.colors.slate[500]};
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  margin-top: ${props => props.theme.spacing.xs};
+  gap: 8px;
+  font-weight: 500;
+  margin-top: 4px;
+
+  svg { color: ${props => props.theme.colors.primary.main}; }
 `;
 
-const AddButton = styled(motion.button)`
-  background: ${props => props.theme.colors.gradients.blue};
-  color: white;
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.borderRadius.lg};
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  border: none;
-  cursor: pointer;
+const ActionButtons = styled.div`
+    display: flex;
+    gap: 12px;
+`;
+
+const ActionButton = styled(motion.button)`
+  background: ${props => props.bg || props.theme.colors.gradients.primary};
+  color: ${props => props.color || 'white'};
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.xs};
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+  gap: 10px;
+  box-shadow: ${props => props.shadow || '0 10px 20px rgba(99, 102, 241, 0.2)'};
+  border: none;
+  cursor: pointer;
 `;
 
 const AccumulatedSection = styled.div`
-  background: ${props => props.theme.colors.slate[50]};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  padding: ${props => props.theme.spacing.md};
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const ReportButton = styled(motion.button)`
-  width: 100%;
-  background: ${props => props.theme.colors.gradients.blue};
-  color: white;
-  padding: ${props => props.theme.spacing.sm};
-  border-radius: ${props => props.theme.borderRadius.lg};
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: ${props => props.theme.spacing.xs};
-  margin-top: ${props => props.theme.spacing.md};
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
 `;
 
 const AccumulatedGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: ${props => props.theme.spacing.md};
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const StatBox = styled.div`
   text-align: center;
+  padding: 16px;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+
+  span {
+    font-size: 12px;
+    font-weight: 700;
+    color: ${props => props.theme.colors.slate[400]};
+    display: block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  h4 {
+    font-size: 24px;
+    font-weight: 900;
+    color: ${props => props.color};
+  }
 `;
 
-const StatLabel = styled.p`
-  font-size: ${props => props.theme.typography.fontSize.xs};
-  color: ${props => props.theme.colors.slate[500]};
-  margin-bottom: ${props => props.theme.spacing.xs};
-`;
+const ReportButton = styled(motion.button)`
+  width: 100%;
+  background: white;
+  color: ${props => props.theme.colors.primary.main};
+  padding: 14px;
+  border-radius: 16px;
+  font-weight: 700;
+  border: 1px solid ${props => props.theme.colors.primary.main}20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
 
-const StatValue = styled.p`
-  font-size: ${props => props.theme.typography.fontSize['2xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.color || props.theme.colors.slate[800]};
+  &:hover {
+    background: ${props => props.theme.colors.primary.main}05;
+  }
 `;
 
 const GradesSection = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const GradeListContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  gap: 12px;
 `;
 
 const SectionTitle = styled.h4`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  color: ${props => props.theme.colors.slate[700]};
+  font-size: 15px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.slate[800]};
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing.sm};
-  margin-top: ${props => props.theme.spacing.md};
+  gap: 10px;
+  margin-bottom: 12px;
 `;
 
-const GradesList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.sm};
-`;
-
-const GradeItem = styled.div`
+const GradeItem = styled(motion.div)`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: ${props => props.theme.spacing.sm} ${props => props.theme.spacing.md};
+  padding: 16px 20px;
   background: white;
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-  border-radius: ${props => props.theme.borderRadius.lg};
+  border-radius: 18px;
+  border: 1px solid ${props => props.theme.colors.slate[100]};
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+
+  &:hover {
+    border-color: ${props => props.theme.colors.primary.main}40;
+    transform: translateY(-2px);
+  }
 `;
 
-const GradeName = styled.span`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.slate[700]};
-`;
-
-const GradeScore = styled.span`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  color: ${props => props.color};
+const GradeName = styled.div`
+  h5 { font-size: 14px; font-weight: 700; color: ${props => props.theme.colors.slate[800]}; margin-bottom: 2px; }
+  span { font-size: 11px; color: ${props => props.theme.colors.slate[400]}; font-weight: 500; }
 `;
 
 const IconButton = styled(motion.button)`
-  width: 1.75rem;
-  height: 1.75rem;
-  background: ${props => props.bgColor};
-  color: ${props => props.color};
-  border: none;
-  border-radius: ${props => props.theme.borderRadius.md};
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: ${props => props.bg || '#F1F5F9'};
+  color: ${props => props.color || '#64748B'};
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
   cursor: pointer;
 `;
 
-const Modal = styled(motion.div)`
+const ModalOverlay = styled(motion.div)`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
-  padding: ${props => props.theme.spacing.md};
+  padding: 24px;
 `;
 
 const ModalContent = styled(motion.div)`
   background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.xl};
-  max-width: 28rem;
+  border-radius: 28px;
   width: 100%;
-  padding: ${props => props.theme.spacing.lg};
-`;
-
-const ModalHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${props => props.theme.spacing.lg};
-`;
-
-const ModalTitle = styled.h2`
-  font-size: ${props => props.theme.typography.fontSize.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
+  max-width: 480px;
+  padding: 40px;
+  position: relative;
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
+  gap: 20px;
 `;
 
-const FormGroup = styled.div``;
-
-const Label = styled.label`
-  display: block;
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  color: ${props => props.theme.colors.slate[700]};
-  margin-bottom: ${props => props.theme.spacing.sm};
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `;
 
 const Input = styled.input`
   width: 100%;
-  background: ${props => props.theme.colors.slate[50]};
+  padding: 14px;
+  border-radius: 14px;
   border: 1px solid ${props => props.theme.colors.slate[200]};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  padding: ${props => props.theme.spacing.md};
-  color: ${props => props.theme.colors.slate[800]};
+  font-size: 15px;
   outline: none;
+  transition: all 0.2s;
 
   &:focus {
     border-color: ${props => props.theme.colors.primary.main};
-    background: white;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
   }
-`;
-
-const ButtonGroup = styled.div`
-  display: flex;
-  gap: ${props => props.theme.spacing.md};
-  padding-top: ${props => props.theme.spacing.md};
-`;
-
-const CancelButton = styled(motion.button)`
-  flex: 1;
-  background: ${props => props.theme.colors.slate[200]};
-  color: ${props => props.theme.colors.slate[800]};
-  padding: ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  border: none;
-  cursor: pointer;
-`;
-
-const SubmitButton = styled(motion.button)`
-  flex: 1;
-  background: ${props => props.theme.colors.gradients.blue};
-  color: white;
-  padding: ${props => props.theme.spacing.md};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
 `;
 
 const GradeManagement = () => {
@@ -328,21 +336,16 @@ const GradeManagement = () => {
         date: new Date().toISOString().split('T')[0]
     });
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     useEffect(() => {
-        // Check if there's an enrollment parameter in the URL
         const enrollmentParam = searchParams.get('enrollment');
         if (enrollmentParam && enrollments.length > 0) {
             const enrollmentId = parseInt(enrollmentParam);
             const enrollment = enrollments.find(e => e.id === enrollmentId);
-
             if (enrollment) {
                 setSelectedEnrollment(enrollmentId.toString());
                 handleAddGrade(enrollmentId);
-                // Remove the parameter from URL
                 searchParams.delete('enrollment');
                 setSearchParams(searchParams);
             }
@@ -352,23 +355,13 @@ const GradeManagement = () => {
     const loadData = async () => {
         try {
             const allEnrollments = await enrollmentsAPI.getAll();
-
-            // Add grades and accumulated data to each enrollment
-            const enrichedEnrollments = await Promise.all(allEnrollments.map(async enrollment => {
+            const enriched = await Promise.all(allEnrollments.map(async enrollment => {
                 const grades = await gradesAPI.getByEnrollment(enrollment.id);
                 const accumulated = gradesAPI.calculateAccumulated ? gradesAPI.calculateAccumulated(enrollment.id) : null;
-                return {
-                    ...enrollment,
-                    grades: grades || [],
-                    accumulated
-                };
+                return { ...enrollment, grades: grades || [], accumulated };
             }));
-
-            setEnrollments(enrichedEnrollments);
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            setEnrollments([]);
-        }
+            setEnrollments(enriched);
+        } catch (error) { console.error(error); }
     };
 
     const filteredEnrollments = selectedEnrollment === 'all'
@@ -378,10 +371,7 @@ const GradeManagement = () => {
     const handleAddGrade = (enrollmentId) => {
         setCurrentEnrollmentId(enrollmentId);
         setFormData({
-            type: 'assignment',
-            name: '',
-            score: '',
-            maxScore: 100,
+            type: 'assignment', name: '', score: '', maxScore: 100,
             date: new Date().toISOString().split('T')[0]
         });
         setIsModalOpen(true);
@@ -389,7 +379,6 @@ const GradeManagement = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         try {
             await gradesAPI.create({
                 enrollmentId: currentEnrollmentId,
@@ -399,333 +388,196 @@ const GradeManagement = () => {
                 maxScore: parseFloat(formData.maxScore),
                 date: formData.date
             });
-
             await loadData();
             setIsModalOpen(false);
-        } catch (error) {
-            console.error('Error guardando calificación:', error);
-            alert('Error al guardar la calificación');
-        }
+        } catch (error) { alert('Error al guardar'); }
     };
 
     const handleDeleteGrade = async (gradeId) => {
-        if (confirm('¿Eliminar esta calificación?')) {
+        if (window.confirm('¿Eliminar esta calificación?')) {
             try {
                 await gradesAPI.delete(gradeId);
                 await loadData();
-            } catch (error) {
-                console.error('Error eliminando calificación:', error);
-                alert('Error al eliminar la calificación');
-            }
+            } catch (error) { alert('Error al eliminar'); }
         }
     };
 
     const getGradeColor = (score) => {
-        if (score >= 90) return '#22C55E';
-        if (score >= 80) return '#3B82F6';
-        if (score >= 70) return '#F97316';
+        if (score >= 90) return '#10B981';
+        if (score >= 80) return '#6366F1';
+        if (score >= 70) return '#F59E0B';
         return '#EF4444';
     };
 
     const handleGenerateReport = async (enrollment) => {
         try {
-            console.log('Generando reporte para:', enrollment.studentName);
-
-            // Obtener el estudiante completo
             const allStudents = await studentsAPI.getAll();
             const student = allStudents.find(s => s.name === enrollment.studentName);
-            if (!student) {
-                alert('No se encontró la información del estudiante');
-                return;
-            }
-
-            // Obtener todas las inscripciones del estudiante
+            if (!student) return alert('Estudiante no encontrado');
             const studentEnrollments = enrollments.filter(e => e.studentId === student.id);
-
-            // Obtener todas las calificaciones
             const allGrades = await gradesAPI.getAll();
-
-            console.log('Generando PDF...');
             const doc = await PDFService.generateStudentReport(student, studentEnrollments, allGrades);
-            PDFService.downloadPDF(doc, `Reporte_${student.name.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
-
-            console.log('PDF generado exitosamente');
-        } catch (error) {
-            console.error('Error al generar reporte:', error);
-            alert(`Error al generar el reporte: ${error.message}`);
-        }
+            PDFService.downloadPDF(doc, `Reporte_${student.name.replace(/\s+/g, '_')}.pdf`);
+        } catch (error) { alert(`Error: ${error.message}`); }
     };
 
     return (
         <Container>
-            <div>
-                <Title>Gestión de Calificaciones</Title>
-                <Subtitle>Administra asignaciones, exámenes y visualiza acumulados</Subtitle>
-            </div>
+            <Header>
+                <Title>Gestión Académica</Title>
+                <Subtitle>Control de calificaciones, asistencias y rendimiento por materia</Subtitle>
+            </Header>
 
             <FiltersCard>
-                <Label>Filtrar por Inscripción</Label>
-                <Select
-                    value={selectedEnrollment}
-                    onChange={(e) => setSelectedEnrollment(e.target.value)}
-                >
-                    <option value="all">Todas las inscripciones</option>
-                    {enrollments.map(e => (
-                        <option key={e.id} value={e.id}>
-                            {e.studentName} - {e.subjectName}
-                        </option>
-                    ))}
+                <Label><Users size={16} /> Seleccionar Registro Académico</Label>
+                <Select value={selectedEnrollment} onChange={e => setSelectedEnrollment(e.target.value)}>
+                    <option value="all">Todas las materias inscritas</option>
+                    {enrollments.map(e => <option key={e.id} value={e.id}>{e.studentName} — {e.subjectName}</option>)}
                 </Select>
             </FiltersCard>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {filteredEnrollments.map((enrollment, index) => (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {filteredEnrollments.length > 0 ? filteredEnrollments.map((enrollment, idx) => (
                     <EnrollmentCard
                         key={enrollment.id}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
+                        transition={{ delay: idx * 0.1 }}
                     >
-                        <ColorBar color={enrollment.color} />
+                        <ColorBar color={enrollment.color || '#6366F1, #8B5CF6'} />
                         <CardContent>
                             <CardHeader>
                                 <StudentInfo>
-                                    <StudentName>{enrollment.studentName}</StudentName>
-                                    <SubjectName>
-                                        <BookOpen size={14} />
-                                        {enrollment.subjectName} ({enrollment.subjectCode})
-                                    </SubjectName>
-                                    <SubjectName>
-                                        <Users size={14} />
-                                        {enrollment.teacher}
-                                    </SubjectName>
+                                    <h3>{enrollment.studentName}</h3>
+                                    <InfoRow><BookOpen size={14} /> {enrollment.subjectName} ({enrollment.subjectCode})</InfoRow>
+                                    <InfoRow><Users size={14} /> Prof. {enrollment.teacher}</InfoRow>
                                 </StudentInfo>
                                 <AddButton
-                                    onClick={() => handleAddGrade(enrollment.id)}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
+                                    onClick={() => handleAddGrade(enrollment.id)}
                                 >
-                                    <Plus size={16} />
-                                    Agregar Nota
+                                    <Plus size={18} /> Nueva Nota
                                 </AddButton>
                             </CardHeader>
 
                             {enrollment.accumulated && (
                                 <AccumulatedSection>
                                     <AccumulatedGrid>
-                                        <StatBox>
-                                            <StatLabel>Asignaciones ({enrollment.accumulated.totalAssignments})</StatLabel>
-                                            <StatValue color={getGradeColor(enrollment.accumulated.assignmentAvg)}>
-                                                {enrollment.accumulated.assignmentAvg}%
-                                            </StatValue>
+                                        <StatBox color={getGradeColor(enrollment.accumulated.assignmentAvg)}>
+                                            <span>Tareas ({enrollment.accumulated.totalAssignments})</span>
+                                            <h4>{enrollment.accumulated.assignmentAvg}%</h4>
                                         </StatBox>
-                                        <StatBox>
-                                            <StatLabel>Exámenes ({enrollment.accumulated.totalExams})</StatLabel>
-                                            <StatValue color={getGradeColor(enrollment.accumulated.examAvg)}>
-                                                {enrollment.accumulated.examAvg}%
-                                            </StatValue>
+                                        <StatBox color={getGradeColor(enrollment.accumulated.examAvg)}>
+                                            <span>Exámenes ({enrollment.accumulated.totalExams})</span>
+                                            <h4>{enrollment.accumulated.examAvg}%</h4>
                                         </StatBox>
-                                        <StatBox>
-                                            <StatLabel>
-                                                <TrendingUp size={12} style={{ display: 'inline', marginRight: '4px' }} />
-                                                Acumulado
-                                            </StatLabel>
-                                            <StatValue color={getGradeColor(enrollment.accumulated.accumulated)}>
-                                                {enrollment.accumulated.accumulated}%
-                                            </StatValue>
+                                        <StatBox color={getGradeColor(enrollment.accumulated.accumulated)}>
+                                            <span>Promedio Final</span>
+                                            <h4>{enrollment.accumulated.accumulated}%</h4>
                                         </StatBox>
                                     </AccumulatedGrid>
                                     <ReportButton
+                                        whileHover={{ scale: 1.01 }}
                                         onClick={() => handleGenerateReport(enrollment)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
                                     >
-                                        <Download size={16} />
-                                        Generar Reporte PDF
+                                        <Download size={18} /> Descargar Reporte de Progreso
                                     </ReportButton>
                                 </AccumulatedSection>
                             )}
 
                             <GradesSection>
-                                {enrollment.grades.filter(g => g.type === 'assignment').length > 0 && (
-                                    <>
-                                        <SectionTitle>
-                                            <FileText size={16} />
-                                            Asignaciones
-                                        </SectionTitle>
-                                        <GradesList>
-                                            {enrollment.grades
-                                                .filter(g => g.type === 'assignment')
-                                                .map(grade => (
-                                                    <GradeItem key={grade.id}>
-                                                        <GradeName>{grade.name}</GradeName>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <GradeScore color={getGradeColor(grade.score)}>
-                                                                {grade.score}/{grade.maxScore}
-                                                            </GradeScore>
-                                                            <IconButton
-                                                                bgColor="rgba(239, 68, 68, 0.1)"
-                                                                color="#DC2626"
-                                                                onClick={() => handleDeleteGrade(grade.id)}
-                                                                whileHover={{ scale: 1.1 }}
-                                                                whileTap={{ scale: 0.9 }}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </IconButton>
-                                                        </div>
-                                                    </GradeItem>
-                                                ))}
-                                        </GradesList>
-                                    </>
-                                )}
+                                <GradeListContainer>
+                                    <SectionTitle><FileText size={18} color="#6366F1" /> Asignaciones y Tareas</SectionTitle>
+                                    {enrollment.grades.filter(g => g.type === 'assignment').length > 0 ? (
+                                        enrollment.grades.filter(g => g.type === 'assignment').map(g => (
+                                            <GradeItem key={g.id}>
+                                                <GradeName>
+                                                    <h5>{g.name}</h5>
+                                                    <span>{new Date(g.date).toLocaleDateString()}</span>
+                                                </GradeName>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{ fontWeight: '800', color: getGradeColor((g.score / g.maxScore) * 100) }}>
+                                                        {g.score}/{g.maxScore}
+                                                    </div>
+                                                    <IconButton bg="#FEE2E2" color="#EF4444" onClick={() => handleDeleteGrade(g.id)} whileHover={{ scale: 1.1 }}>
+                                                        <Trash2 size={14} />
+                                                    </IconButton>
+                                                </div>
+                                            </GradeItem>
+                                        ))
+                                    ) : <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Sin tareas registradas</p>}
+                                </GradeListContainer>
 
-                                {enrollment.grades.filter(g => g.type === 'exam').length > 0 && (
-                                    <>
-                                        <SectionTitle>
-                                            <ClipboardCheck size={16} />
-                                            Exámenes
-                                        </SectionTitle>
-                                        <GradesList>
-                                            {enrollment.grades
-                                                .filter(g => g.type === 'exam')
-                                                .map(grade => (
-                                                    <GradeItem key={grade.id}>
-                                                        <GradeName>{grade.name}</GradeName>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <GradeScore color={getGradeColor(grade.score)}>
-                                                                {grade.score}/{grade.maxScore}
-                                                            </GradeScore>
-                                                            <IconButton
-                                                                bgColor="rgba(239, 68, 68, 0.1)"
-                                                                color="#DC2626"
-                                                                onClick={() => handleDeleteGrade(grade.id)}
-                                                                whileHover={{ scale: 1.1 }}
-                                                                whileTap={{ scale: 0.9 }}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </IconButton>
-                                                        </div>
-                                                    </GradeItem>
-                                                ))}
-                                        </GradesList>
-                                    </>
-                                )}
-
-                                {enrollment.grades.length === 0 && (
-                                    <p style={{ textAlign: 'center', color: '#64748B', padding: '2rem' }}>
-                                        No hay calificaciones registradas
-                                    </p>
-                                )}
+                                <GradeListContainer>
+                                    <SectionTitle><ClipboardCheck size={18} color="#10B981" /> Exámenes y Pruebas</SectionTitle>
+                                    {enrollment.grades.filter(g => g.type === 'exam').length > 0 ? (
+                                        enrollment.grades.filter(g => g.type === 'exam').map(g => (
+                                            <GradeItem key={g.id}>
+                                                <GradeName>
+                                                    <h5>{g.name}</h5>
+                                                    <span>{new Date(g.date).toLocaleDateString()}</span>
+                                                </GradeName>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{ fontWeight: '800', color: getGradeColor((g.score / g.maxScore) * 100) }}>
+                                                        {g.score}/{g.maxScore}
+                                                    </div>
+                                                    <IconButton bg="#FEE2E2" color="#EF4444" onClick={() => handleDeleteGrade(g.id)} whileHover={{ scale: 1.1 }}>
+                                                        <Trash2 size={14} />
+                                                    </IconButton>
+                                                </div>
+                                            </GradeItem>
+                                        ))
+                                    ) : <p style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Sin exámenes registrados</p>}
+                                </GradeListContainer>
                             </GradesSection>
                         </CardContent>
                     </EnrollmentCard>
-                ))}
+                )) : (
+                    <div style={{ textAlign: 'center', padding: '60px', background: 'white', borderRadius: '32px', border: '1px dashed #cbd5e1' }}>
+                        <AlertCircle size={48} color="#94a3b8" style={{ marginBottom: '16px' }} />
+                        <h3 style={{ color: '#475569', fontWeight: '700' }}>No se encontraron registros</h3>
+                        <p style={{ color: '#94a3b8' }}>Selecciona una opción diferente en el filtro o inscribe alumnos en materias.</p>
+                    </div>
+                )}
             </div>
 
             <AnimatePresence>
                 {isModalOpen && (
-                    <Modal
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setIsModalOpen(false)}
-                    >
-                        <ModalContent
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <ModalHeader>
-                                <ModalTitle>Agregar Calificación</ModalTitle>
-                                <IconButton
-                                    bgColor="#F1F5F9"
-                                    color="#64748B"
-                                    onClick={() => setIsModalOpen(false)}
-                                >
-                                    <X size={20} />
-                                </IconButton>
-                            </ModalHeader>
-
+                    <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)}>
+                        <ModalContent initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                                <h2 style={{ fontSize: '24px', fontWeight: '800', letterSpacing: '-0.02em' }}>Registrar Nota</h2>
+                                <IconButton onClick={() => setIsModalOpen(false)}><X size={20} /></IconButton>
+                            </div>
                             <Form onSubmit={handleSubmit}>
-                                <FormGroup>
-                                    <Label>Tipo</Label>
-                                    <Select
-                                        value={formData.type}
-                                        onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                    >
-                                        <option value="assignment">Asignación/Tarea</option>
-                                        <option value="exam">Examen</option>
+                                <InputGroup>
+                                    <Label>Tipo de Evaluación</Label>
+                                    <Select value={formData.type} onChange={e => setFormData({ ...formData, type: e.target.value })}>
+                                        <option value="assignment">📝 Asignación / Tarea</option>
+                                        <option value="exam">📋 Examen Parcial / Final</option>
                                     </Select>
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <Label>Nombre</Label>
-                                    <Input
-                                        type="text"
-                                        required
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        placeholder="Ej: Tarea 1, Parcial 1"
-                                    />
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <Label>Puntuación Obtenida</Label>
-                                    <Input
-                                        type="number"
-                                        required
-                                        min="0"
-                                        max={formData.maxScore}
-                                        step="0.1"
-                                        value={formData.score}
-                                        onChange={(e) => setFormData({ ...formData, score: e.target.value })}
-                                        placeholder="95"
-                                    />
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <Label>Puntuación Máxima</Label>
-                                    <Input
-                                        type="number"
-                                        required
-                                        min="1"
-                                        value={formData.maxScore}
-                                        onChange={(e) => setFormData({ ...formData, maxScore: e.target.value })}
-                                        placeholder="100"
-                                    />
-                                </FormGroup>
-
-                                <FormGroup>
-                                    <Label>Fecha</Label>
-                                    <Input
-                                        type="date"
-                                        required
-                                        value={formData.date}
-                                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    />
-                                </FormGroup>
-
-                                <ButtonGroup>
-                                    <CancelButton
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        Cancelar
-                                    </CancelButton>
-                                    <SubmitButton
-                                        type="submit"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                    >
-                                        Guardar
-                                    </SubmitButton>
-                                </ButtonGroup>
+                                </InputGroup>
+                                <InputGroup>
+                                    <Label>Nombre de la Evaluación</Label>
+                                    <Input required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Ej: Primer Parcial, Tarea #1" />
+                                </InputGroup>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                    <InputGroup>
+                                        <Label>Nota Obtenida</Label>
+                                        <Input type="number" step="0.5" required value={formData.score} onChange={e => setFormData({ ...formData, score: e.target.value })} placeholder="0.0" />
+                                    </InputGroup>
+                                    <InputGroup>
+                                        <Label>Puntaje Máximo</Label>
+                                        <Input type="number" required value={formData.maxScore} onChange={e => setFormData({ ...formData, maxScore: e.target.value })} placeholder="100" />
+                                    </InputGroup>
+                                </div>
+                                <ActionButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>
+                                    <CheckCircle2 size={18} /> Guardar Calificación
+                                </ActionButton>
                             </Form>
                         </ModalContent>
-                    </Modal>
+                    </ModalOverlay>
                 )}
             </AnimatePresence>
         </Container>

@@ -9,7 +9,10 @@ import {
     Award,
     BookOpen,
     Users,
-    X
+    X,
+    Filter,
+    CheckCircle2,
+    AlertCircle
 } from 'lucide-react';
 import { studentsAPI, subjectsAPI, enrollmentsAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
@@ -17,193 +20,203 @@ import { Toast, useToast } from '../components/Toast';
 const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing.lg};
+  gap: ${props => props.theme.spacing.xl};
+  padding-bottom: 40px;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: ${props => props.theme.spacing.md};
-`;
+  align-items: flex-end;
+  margin-bottom: ${props => props.theme.spacing.md};
 
-const Title = styled.h1`
-  font-size: ${props => props.theme.typography.fontSize['3xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.slate[800]};
-  margin-bottom: ${props => props.theme.spacing.sm};
-`;
-
-const Subtitle = styled.p`
-  color: ${props => props.theme.colors.slate[500]};
-`;
-
-const AddButton = styled(motion.button)`
-  background: ${props => props.theme.colors.gradients.purple};
-  color: white;
-  padding: ${props => props.theme.spacing.md} ${props => props.theme.spacing.lg};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.3);
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: ${props => props.theme.spacing.sm};
-`;
-
-const FiltersCard = styled.div`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.lg};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-  padding: ${props => props.theme.spacing.lg};
-`;
-
-const FiltersGrid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: ${props => props.theme.spacing.md};
-
-  @media (min-width: ${props => props.theme.breakpoints.md}) {
-    grid-template-columns: repeat(3, 1fr);
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
   }
 `;
 
-const SearchWrapper = styled.div`
-  position: relative;
+const TitleSection = styled.div`
+  h1 {
+    font-size: 36px;
+    font-weight: 800;
+    color: ${props => props.theme.colors.slate[900]};
+    letter-spacing: -0.04em;
+    margin-bottom: 8px;
+  }
+  p {
+    font-size: 16px;
+    color: ${props => props.theme.colors.slate[500]};
+    font-weight: 500;
+  }
 `;
 
-const SearchIcon = styled.div`
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: ${props => props.theme.colors.slate[400]};
+const AddButton = styled(motion.button)`
+  background: ${props => props.theme.colors.gradients.primary};
+  color: white;
+  padding: 12px 24px;
+  border-radius: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+  border: none;
+  cursor: pointer;
+`;
+
+const FiltersCard = styled.div`
+  ${props => props.theme.glassmorphism}
+  border-radius: 24px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const InputWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  svg {
+    position: absolute;
+    left: 14px;
+    color: ${props => props.theme.colors.slate[400]};
+  }
 `;
 
 const Input = styled.input`
   width: 100%;
-  background: ${props => props.theme.colors.slate[50]};
+  padding: 12px 12px 12px 42px;
+  background: white;
   border: 1px solid ${props => props.theme.colors.slate[200]};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  padding: ${props => props.theme.spacing.md};
-  padding-left ${props => props.withIcon ? '2.5rem' : props.theme.spacing.md};
-  color: ${props => props.theme.colors.slate[800]};
+  border-radius: 12px;
+  font-size: 14px;
   outline: none;
+  transition: all 0.2s;
 
   &:focus {
-    border-color: ${props => props.theme.colors.info.main};
-    background: white;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+    border-color: ${props => props.theme.colors.primary.main};
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
   }
 `;
 
 const Select = styled.select`
   width: 100%;
-  background: ${props => props.theme.colors.slate[50]};
+  padding: 12px;
+  background: white;
   border: 1px solid ${props => props.theme.colors.slate[200]};
-  border-radius: ${props => props.theme.borderRadius.xl};
-  padding: ${props => props.theme.spacing.md};
-  color: ${props => props.theme.colors.slate[800]};
+  border-radius: 12px;
+  font-size: 14px;
   outline: none;
+  cursor: pointer;
 
   &:focus {
-    border-color: ${props => props.theme.colors.info.main};
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.1);
+    border-color: ${props => props.theme.colors.primary.main};
   }
 `;
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
-  gap: ${props => props.theme.spacing.lg};
-
-  @media (min-width: ${props => props.theme.breakpoints.md}) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (min-width: ${props => props.theme.breakpoints.lg}) {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
 `;
 
-const Card = styled(motion.div)`
-  background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.lg};
-  border: 1px solid ${props => props.theme.colors.slate[200]};
+const EnrollmentCard = styled(motion.div)`
+  ${props => props.theme.glassmorphism}
+  border-radius: 24px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.8);
 `;
 
-const ColorBar = styled.div`
-  height: 0.5rem;
+const CardTop = styled.div`
+  height: 6px;
   background: linear-gradient(to right, ${props => props.color});
 `;
 
-const CardContent = styled.div`
-  padding: ${props => props.theme.spacing.lg};
+const CardBody = styled.div`
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 `;
 
 const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: ${props => props.theme.spacing.md};
 `;
 
-const IconWrapper = styled.div`
-  width: 3rem;
-  height: 3rem;
-  background: linear-gradient(to bottom right, ${props => props.color});
-  border-radius: ${props => props.theme.borderRadius.xl};
-  display: flex;
-  align-items: center;
-  justify-center;
-  box-shadow: ${props => props.theme.shadows.lg};
-
-  svg {
-    color: white;
-  }
-`;
-
-const DeleteButton = styled(motion.button)`
-  width: 2rem;
-  height: 2rem;
-  background: rgba(239, 68, 68, 0.1);
-  color: #DC2626;
-  border: none;
-  border-radius: ${props => props.theme.borderRadius.lg};
+const IconBox = styled.div`
+  width: 44px;
+  height: 44px;
+  background: ${props => props.bg};
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  color: white;
+`;
 
-  &:hover {
-    background: rgba(239, 68, 68, 0.2);
+const StudentInfo = styled.div`
+   margin-top: 8px;
+   h3 { font-size: 18px; font-weight: 800; color: ${props => props.theme.colors.slate[900]}; margin-bottom: 4px; }
+   div { font-size: 13px; color: ${props => props.theme.colors.slate[500]}; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+`;
+
+const SubjectInfo = styled.div`
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+
+  h4 { font-size: 14px; font-weight: 700; color: ${props => props.theme.colors.slate[800]}; margin-bottom: 2px; }
+  p { font-size: 12px; color: ${props => props.theme.colors.slate[500]}; }
+`;
+
+const GradeBadge = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+
+  span { font-size: 12px; font-weight: 700; color: ${props => props.theme.colors.slate[400]}; text-transform: uppercase; }
+  div { 
+    padding: 4px 12px; 
+    border-radius: 10px; 
+    font-size: 13px; 
+    font-weight: 800; 
+    background: ${props => props.bg};
+    color: ${props => props.color};
   }
 `;
 
-const Modal = styled(motion.div)`
+const ModalOverlay = styled(motion.div)`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
-  padding: ${props => props.theme.spacing.md};
+  padding: 24px;
 `;
 
 const ModalContent = styled(motion.div)`
   background: white;
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  box-shadow: ${props => props.theme.shadows.xl};
-  max-width: 28rem;
+  border-radius: 28px;
   width: 100%;
-  padding: ${props => props.theme.spacing.lg};
+  max-width: 480px;
+  padding: 40px;
 `;
 
 const Enrollments = () => {
@@ -217,46 +230,31 @@ const Enrollments = () => {
     const [formData, setFormData] = useState({ studentId: '', subjectId: '' });
     const toast = useToast();
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    useEffect(() => { loadData(); }, []);
 
     const loadData = async () => {
         try {
-            const [studentsData, subjectsData, enrollmentsData] = await Promise.all([
-                studentsAPI.getAll(),
-                subjectsAPI.getAll(),
-                enrollmentsAPI.getAll()
+            const [st, su, en] = await Promise.all([
+                studentsAPI.getAll(), subjectsAPI.getAll(), enrollmentsAPI.getAll()
             ]);
-            setStudents(studentsData);
-            setSubjects(subjectsData);
-            setEnrollments(enrollmentsData);
-        } catch (error) {
-            console.error('Error cargando datos:', error);
-            setStudents([]);
-            setSubjects([]);
-            setEnrollments([]);
-        }
+            setStudents(st); setSubjects(su); setEnrollments(en);
+        } catch (err) { console.error(err); }
     };
 
-    const filteredEnrollments = enrollments.filter(enrollment => {
-        const matchSearch = enrollment.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            enrollment.subjectName?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchStudent = filterStudent === 'all' || enrollment.studentId === parseInt(filterStudent);
-        const matchSubject = filterSubject === 'all' || enrollment.subjectId === parseInt(filterSubject);
+    const filtered = enrollments.filter(e => {
+        const matchSearch = e.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) || e.subjectName?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchStudent = filterStudent === 'all' || e.studentId === parseInt(filterStudent);
+        const matchSubject = filterSubject === 'all' || e.subjectId === parseInt(filterSubject);
         return matchSearch && matchStudent && matchSubject;
     });
 
-    const handleDelete = async (id, studentName, subjectName) => {
-        if (confirm(`¿Eliminar la inscripción de ${studentName} en ${subjectName}?`)) {
+    const handleDelete = async (id, sName, suName) => {
+        if (window.confirm(`¿Retirar a ${sName} de ${suName}?`)) {
             try {
                 await enrollmentsAPI.delete(id);
-                toast.success('La inscripción fue eliminada correctamente', 'Eliminación Exitosa');
+                toast.success('Retiro completado');
                 await loadData();
-            } catch (error) {
-                console.error('Error eliminando inscripción:', error);
-                toast.error('No se pudo eliminar. La inscripción tiene calificaciones registradas.', 'Error al Eliminar');
-            }
+            } catch (err) { toast.error('Error: Posiblemente tiene notas registradas'); }
         }
     };
 
@@ -264,268 +262,129 @@ const Enrollments = () => {
         e.preventDefault();
         const student = students.find(s => s.id === parseInt(formData.studentId));
         const subject = subjects.find(s => s.id === parseInt(formData.subjectId));
-
         if (!student || !subject) return;
 
-        const exists = enrollments.some(e =>
-            e.studentId === parseInt(formData.studentId) &&
-            e.subjectId === parseInt(formData.subjectId)
-        );
-
-        if (exists) {
-            toast.warning('Este estudiante ya está inscrito en esta materia', 'Inscripción Duplicada');
-            return;
+        if (enrollments.some(e => e.studentId === student.id && e.subjectId === subject.id)) {
+            return toast.warning('Ya está inscrito');
         }
 
         try {
             await enrollmentsAPI.create({
-                studentId: student.id,
-                studentName: student.name,
-                subjectId: subject.id,
-                subjectName: subject.name,
-                subjectCode: subject.code,
-                color: subject.color
+                studentId: student.id, studentName: student.name,
+                subjectId: subject.id, subjectName: subject.name,
+                subjectCode: subject.code, color: subject.color
             });
-
-            await loadData();
-            setIsModalOpen(false);
-            toast.success(`${student.name} inscrito en ${subject.name}`, 'Inscripción Exitosa');
-        } catch (error) {
-            console.error('Error creando inscripción:', error);
-            toast.error('No se pudo crear la inscripción', 'Error');
-        }
+            await loadData(); setIsModalOpen(false); toast.success('Inscripción exitosa');
+        } catch (err) { toast.error('Error al inscribir'); }
     };
 
-    const getGradeColor = (grade) => {
-        if (!grade) return { bg: 'rgba(148, 163, 184, 0.1)', color: '#64748B' };
-        if (grade >= 90) return { bg: 'rgba(34, 197, 94, 0.1)', color: '#16A34A' };
-        if (grade >= 80) return { bg: 'rgba(59, 130, 246, 0.1)', color: '#2563EB' };
-        if (grade >= 70) return { bg: 'rgba(249, 115, 22, 0.1)', color: '#EA580C' };
-        return { bg: 'rgba(239, 68, 68, 0.1)', color: '#DC2626' };
+    const getGradeStyles = (grade) => {
+        if (!grade) return { bg: '#F1F5F9', color: '#64748B' };
+        if (grade >= 90) return { bg: '#ECFDF5', color: '#10B981' };
+        if (grade >= 80) return { bg: '#EEF2FF', color: '#6366F1' };
+        if (grade >= 70) return { bg: '#FFFBEB', color: '#F59E0B' };
+        return { bg: '#FEF2F2', color: '#EF4444' };
     };
 
     return (
         <Container>
             <Toast toasts={toast.toasts} removeToast={toast.removeToast} />
             <Header>
-                <div>
-                    <Title>Inscripciones</Title>
-                    <Subtitle>Gestiona las inscripciones de estudiantes en materias</Subtitle>
-                </div>
-                <AddButton
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsModalOpen(true)}
-                >
-                    <Plus size={20} />
-                    <span>Nueva Inscripción</span>
+                <TitleSection>
+                    <h1>Inscripciones</h1>
+                    <p>Relación académica entre estudiantes y materias curriculares</p>
+                </TitleSection>
+                <AddButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setIsModalOpen(true)}>
+                    <UserPlus size={20} /> Inscribir Alumno
                 </AddButton>
             </Header>
 
             <FiltersCard>
-                <FiltersGrid>
-                    <SearchWrapper>
-                        <SearchIcon>
-                            <Search size={20} />
-                        </SearchIcon>
-                        <Input
-                            type="text"
-                            placeholder="Buscar..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            withIcon
-                        />
-                    </SearchWrapper>
-                    <Select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value)}>
-                        <option value="all">Todos los estudiantes</option>
-                        {students.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                    </Select>
-                    <Select value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)}>
-                        <option value="all">Todas las materias</option>
-                        {subjects.map(s => (
-                            <option key={s.id} value={s.id}>{s.name}</option>
-                        ))}
-                    </Select>
-                </FiltersGrid>
+                <InputWrapper>
+                    <Search size={18} />
+                    <Input placeholder="Buscar por nombre o materia..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                </InputWrapper>
+                <Select value={filterStudent} onChange={e => setFilterStudent(e.target.value)}>
+                    <option value="all">Filtro por Estudiante</option>
+                    {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </Select>
+                <Select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+                    <option value="all">Filtro por Materia</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </Select>
             </FiltersCard>
 
             <Grid>
-                {filteredEnrollments.map((enrollment, index) => {
-                    const gradeColors = getGradeColor(enrollment.grade);
+                {filtered.map((en, idx) => {
+                    const styles = getGradeStyles(en.grade);
                     return (
-                        <Card
-                            key={enrollment.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            whileHover={{ y: -5 }}
-                        >
-                            <ColorBar color={enrollment.color} />
-                            <CardContent>
+                        <EnrollmentCard key={en.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} whileHover={{ y: -8 }}>
+                            <CardTop color={en.color || '#6366F1, #8B5CF6'} />
+                            <CardBody>
                                 <CardHeader>
-                                    <IconWrapper color={enrollment.color}>
-                                        <UserPlus size={24} />
-                                    </IconWrapper>
-                                    <DeleteButton
+                                    <IconBox bg={en.color || '#6366F1'}><Users size={20} /></IconBox>
+                                    <motion.button
+                                        onClick={() => handleDelete(en.id, en.studentName, en.subjectName)}
+                                        style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}
                                         whileHover={{ scale: 1.1 }}
-                                        whileTap={{ scale: 0.9 }}
-                                        onClick={() => handleDelete(enrollment.id)}
                                     >
                                         <Trash2 size={16} />
-                                    </DeleteButton>
+                                    </motion.button>
                                 </CardHeader>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Users size={14} />
-                                            <span>Estudiante</span>
-                                        </div>
-                                        <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold' }}>{enrollment.studentName}</h3>
-                                    </div>
-
-                                    <div>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748B', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <BookOpen size={14} />
-                                            <span>Materia</span>
-                                        </div>
-                                        <p style={{ fontWeight: '600', color: '#334155' }}>{enrollment.subjectName}</p>
-                                        <p style={{ fontSize: '0.875rem', color: '#64748B' }}>{enrollment.subjectCode}</p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px solid #E2E8F0' }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748B', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                            <Award size={14} />
-                                            <span>Calificación</span>
-                                        </div>
-                                        <span style={{
-                                            padding: '0.25rem 0.75rem',
-                                            borderRadius: '0.5rem',
-                                            fontSize: '0.875rem',
-                                            fontWeight: 'bold',
-                                            background: gradeColors.bg,
-                                            color: gradeColors.color
-                                        }}>
-                                            {enrollment.grade || 'Sin nota'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                <StudentInfo>
+                                    <h3>{en.studentName}</h3>
+                                    <div><UserPlus size={14} /> Registro Académico</div>
+                                </StudentInfo>
+                                <SubjectInfo>
+                                    <h4>{en.subjectName}</h4>
+                                    <p>Código: {en.subjectCode}</p>
+                                </SubjectInfo>
+                                <GradeBadge bg={styles.bg} color={styles.color}>
+                                    <span>Promedio Actual</span>
+                                    <div>{en.grade ? `${en.grade}%` : 'S/N'}</div>
+                                </GradeBadge>
+                            </CardBody>
+                        </EnrollmentCard>
                     );
                 })}
             </Grid>
 
+            {filtered.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '80px', background: 'white', borderRadius: '32px' }}>
+                    <AlertCircle size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+                    <h3 style={{ color: '#64748b' }}>No se encontraron inscripciones</h3>
+                </div>
+            )}
+
             <AnimatePresence>
                 {isModalOpen && (
-                    <Modal
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setIsModalOpen(false)}
-                    >
-                        <ModalContent
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Nueva Inscripción</h2>
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    style={{
-                                        width: '2rem',
-                                        height: '2rem',
-                                        background: '#F1F5F9',
-                                        border: 'none',
-                                        borderRadius: '0.5rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <X size={20} />
-                                </button>
+                    <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)}>
+                        <ModalContent initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                                <h2 style={{ fontSize: '24px', fontWeight: '800' }}>Inscribir Alumno</h2>
+                                <button onClick={() => setIsModalOpen(false)} style={{ border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
                             </div>
-
-                            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                <div>
-                                    <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.5rem', display: 'block' }}>
-                                        Estudiante
-                                    </label>
-                                    <Select
-                                        required
-                                        value={formData.studentId}
-                                        onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                                    >
-                                        <option value="">-- Selecciona un estudiante --</option>
-                                        {students.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name}</option>
-                                        ))}
+                            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '14px', fontWeight: '700' }}>Seleccionar Estudiante</label>
+                                    <Select required value={formData.studentId} onChange={e => setFormData({ ...formData, studentId: e.target.value })}>
+                                        <option value="">Buscar estudiante...</option>
+                                        {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                     </Select>
                                 </div>
-
-                                <div>
-                                    <label style={{ fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.5rem', display: 'block' }}>
-                                        Materia
-                                    </label>
-                                    <Select
-                                        required
-                                        value={formData.subjectId}
-                                        onChange={(e) => setFormData({ ...formData, subjectId: e.target.value })}
-                                    >
-                                        <option value="">-- Selecciona una materia --</option>
-                                        {subjects.map(s => (
-                                            <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
-                                        ))}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    <label style={{ fontSize: '14px', fontWeight: '700' }}>Seleccionar Materia</label>
+                                    <Select required value={formData.subjectId} onChange={e => setFormData({ ...formData, subjectId: e.target.value })}>
+                                        <option value="">Buscar materia...</option>
+                                        {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
                                     </Select>
                                 </div>
-
-                                <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '1rem' }}>
-                                    <motion.button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        style={{
-                                            flex: 1,
-                                            background: '#E2E8F0',
-                                            color: '#1E293B',
-                                            padding: '0.75rem',
-                                            borderRadius: '0.75rem',
-                                            fontWeight: '500',
-                                            border: 'none',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Cancelar
-                                    </motion.button>
-                                    <motion.button
-                                        type="submit"
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        style={{
-                                            flex: 1,
-                                            background: 'linear-gradient(135deg, #A855F7 0%, #9333EA 100%)',
-                                            color: 'white',
-                                            padding: '0.75rem',
-                                            borderRadius: '0.75rem',
-                                            fontWeight: '500',
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 10px 15px -3px rgba(168, 85, 247, 0.3)'
-                                        }}
-                                    >
-                                        Crear
-                                    </motion.button>
-                                </div>
+                                <AddButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>
+                                    <Plus size={18} /> Confirmar Inscripción
+                                </AddButton>
                             </form>
                         </ModalContent>
-                    </Modal>
+                    </ModalOverlay>
                 )}
             </AnimatePresence>
         </Container>

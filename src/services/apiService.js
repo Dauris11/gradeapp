@@ -30,18 +30,20 @@ export const usersAPI = {
     
     login: async (username, password) => {
         try {
-            const users = await usersAPI.getAll();
-            const user = users.find(u => u.username === username && u.password === password);
-            if (user) {
-                return { success: true, user };
-            }
-            return { success: false, message: 'Credenciales inválidas' };
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            return data;
         } catch (error) {
             console.error('Error en usersAPI.login:', error);
             return { success: false, message: 'Error al conectar con el servidor' };
         }
     }
 };
+
 
 // ==================== ESTUDIANTES ====================
 export const studentsAPI = {

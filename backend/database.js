@@ -18,6 +18,9 @@ function initDatabase() {
             email TEXT UNIQUE NOT NULL,
             role TEXT NOT NULL DEFAULT 'user',
             fullName TEXT,
+            isActive INTEGER DEFAULT 1,
+            resetToken TEXT,
+            resetTokenExpiry TEXT,
             createdAt TEXT DEFAULT CURRENT_TIMESTAMP,
             lastLogin TEXT
         )

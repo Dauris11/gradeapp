@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { db, initDatabase } = require('./database');
+const whatsappService = require('./whatsappServiceFree');
+const QRCode = require('qrcode');
 
 const app = express();
 const PORT = 3001;
@@ -11,6 +13,9 @@ app.use(express.json());
 
 // Inicializar base de datos
 initDatabase();
+
+// Inicializar WhatsApp
+whatsappService.initializeWhatsApp();
 
 // ==================== RUTAS DE AUTENTICACIÓN ====================
 app.post('/api/auth/login', (req, res) => {
@@ -50,11 +55,23 @@ app.post('/api/auth/reset-password', (req, res) => {
 });
 
 // ==================== RUTAS DE USUARIOS ====================
+// Obtener todos los usuarios
 app.get('/api/users', (req, res) => {
-    const users = db.prepare('SELECT id, username, email, role, fullName, createdAt FROM users').all();
+    const users = db.prepare('SELECT id, username, email, role, fullName, isActive, createdAt, lastLogin FROM users').all();
     res.json(users);
 });
 
+// Obtener un usuario por ID
+app.get('/api/users/:id', (req, res) => {
+    const user = db.prepare('SELECT id, username, email, role, fullName, isActive, createdAt, lastLogin FROM users WHERE id = ?').get(req.params.id);
+    if (user) {
+        res.json(user);
+    } else {
+        res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+});
+
+// Crear nuevo usuario
 app.post('/api/users', (req, res) => {
     const { username, password, email, role, fullName } = req.body;
     try {
@@ -63,11 +80,129 @@ app.post('/api/users', (req, res) => {
             VALUES (?, ?, ?, ?, ?)
         `).run(username, password, email, role || 'user', fullName);
         
-        const user = db.prepare('SELECT id, username, email, role, fullName FROM users WHERE id = ?').get(result.lastInsertRowid);
+        const user = db.prepare('SELECT id, username, email, role, fullName, isActive FROM users WHERE id = ?').get(result.lastInsertRowid);
         res.json(user);
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
+});
+
+// Actualizar usuario
+app.put('/api/users/:id', (req, res) => {
+    const { username, email, role, fullName, isActive } = req.body;
+    try {
+        db.prepare(`
+            UPDATE users 
+            SET username = ?, email = ?, role = ?, fullName = ?, isActive = ?
+            WHERE id = ?
+        `).run(username, email, role, fullName, isActive !== undefined ? isActive : 1, req.params.id);
+        
+        const user = db.prepare('SELECT id, username, email, role, fullName, isActive FROM users WHERE id = ?').get(req.params.id);
+        res.json(user);
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+// Eliminar usuario
+app.delete('/api/users/:id', (req, res) => {
+    // No permitir eliminar al admin principal
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+    if (user && user.username === 'admin') {
+        return res.status(403).json({ error: 'No se puede eliminar el usuario administrador principal' });
+    }
+    
+    db.prepare('DELETE FROM users WHERE id = ?').run(req.params.id);
+    res.json({ success: true });
+});
+
+// Cambiar contraseña (usuario autenticado)
+app.post('/api/users/:id/change-password', (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.params.id);
+    
+    if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    
+    if (user.password !== currentPassword) {
+        return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    }
+    
+    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(newPassword, req.params.id);
+    res.json({ success: true, message: 'Contraseña actualizada exitosamente' });
+});
+
+// Solicitar recuperación de contraseña
+app.post('/api/auth/request-reset', (req, res) => {
+    const { email } = req.body;
+    
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    
+    if (!user) {
+        // Por seguridad, no revelar si el email existe o no
+        return res.json({ success: true, message: 'Si el email existe, recibirás instrucciones para recuperar tu contraseña' });
+    }
+    
+    // Generar token de recuperación
+    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const resetTokenExpiry = new Date(Date.now() + 3600000).toISOString(); // 1 hora
+    
+    db.prepare(`
+        UPDATE users 
+        SET resetToken = ?, resetTokenExpiry = ?
+        WHERE id = ?
+    `).run(resetToken, resetTokenExpiry, user.id);
+    
+    // En producción, enviar email con el token
+    // Por ahora, devolver el token (solo para desarrollo)
+    res.json({ 
+        success: true, 
+        message: 'Token de recuperación generado',
+        // Solo para desarrollo - ELIMINAR en producción
+        resetToken,
+        resetUrl: `http://localhost:5173/reset-password?token=${resetToken}`
+    });
+});
+
+// Verificar token de recuperación
+app.post('/api/auth/verify-reset-token', (req, res) => {
+    const { token } = req.body;
+    
+    const user = db.prepare(`
+        SELECT id, username, email FROM users 
+        WHERE resetToken = ? AND resetTokenExpiry > datetime('now')
+    `).get(token);
+    
+    if (user) {
+        res.json({ valid: true, user });
+    } else {
+        res.json({ valid: false, message: 'Token inválido o expirado' });
+    }
+});
+
+// Restablecer contraseña con token
+app.post('/api/auth/reset-password-with-token', (req, res) => {
+    const { token, newPassword } = req.body;
+    
+    const user = db.prepare(`
+        SELECT id FROM users 
+        WHERE resetToken = ? AND resetTokenExpiry > datetime('now')
+    `).get(token);
+    
+    if (!user) {
+        return res.status(400).json({ error: 'Token inválido o expirado' });
+    }
+    
+    // Actualizar contraseña y limpiar token
+    db.prepare(`
+        UPDATE users 
+        SET password = ?, resetToken = NULL, resetTokenExpiry = NULL
+        WHERE id = ?
+    `).run(newPassword, user.id);
+    
+    res.json({ success: true, message: 'Contraseña restablecida exitosamente' });
 });
 
 // ==================== RUTAS DE ESTUDIANTES ====================
@@ -246,6 +381,156 @@ app.put('/api/grades/:id', (req, res) => {
 app.delete('/api/grades/:id', (req, res) => {
     db.prepare('DELETE FROM grades WHERE id = ?').run(req.params.id);
     res.json({ success: true });
+});
+
+// ==================== RUTAS DE EMAIL ====================
+const emailService = require('./emailService');
+
+// Verificar configuración de SendGrid
+app.get('/api/email/config', (req, res) => {
+    const config = emailService.checkConfiguration();
+    res.json(config);
+});
+
+// Enviar email individual
+app.post('/api/email/send', async (req, res) => {
+    try {
+        const result = await emailService.sendEmail(req.body);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Enviar emails masivos
+app.post('/api/email/send-bulk', async (req, res) => {
+    try {
+        const { emails } = req.body;
+        const results = await emailService.sendBulkEmails(emails);
+        
+        const successCount = results.filter(r => r.success).length;
+        
+        res.json({
+            success: true,
+            total: results.length,
+            sent: successCount,
+            failed: results.length - successCount,
+            results
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+
+// ==================== RUTAS DE WHATSAPP (GRATIS) ====================
+const whatsappService = require('./whatsappServiceFree');
+
+// Inicializar WhatsApp al arrancar el servidor
+whatsappService.initializeWhatsApp();
+
+// Verificar estado de WhatsApp
+app.get('/api/whatsapp/status', (req, res) => {
+    const status = whatsappService.checkStatus();
+    res.json(status);
+});
+
+// Obtener código QR para escanear
+app.get('/api/whatsapp/qr', (req, res) => {
+    const qr = whatsappService.getQRCode();
+    if (qr) {
+        res.json({ qr, needsScan: true });
+    } else {
+        res.json({ needsScan: false, message: 'WhatsApp ya está conectado' });
+    }
+});
+
+// Enviar mensaje de WhatsApp individual
+app.post('/api/whatsapp/send', async (req, res) => {
+    try {
+        const { to, message } = req.body;
+        const result = await whatsappService.sendWhatsAppMessage(to, message);
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Enviar mensajes masivos por WhatsApp
+app.post('/api/whatsapp/send-bulk', async (req, res) => {
+    try {
+        const { messages } = req.body;
+        const results = await whatsappService.sendBulkWhatsApp(messages);
+        
+        const successCount = results.filter(r => r.success).length;
+        
+        res.json({
+            success: true,
+            total: results.length,
+            sent: successCount,
+            failed: results.length - successCount,
+            results
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// ==================== RUTAS DE WHATSAPP ====================
+// Obtener estado de WhatsApp
+app.get('/api/whatsapp/status', (req, res) => {
+    const status = whatsappService.checkStatus();
+    res.json({
+        connected: status.ready,
+        initialized: status.initialized,
+        needsQR: status.needsQR,
+        message: status.message
+    });
+});
+
+// Obtener código QR
+app.get('/api/whatsapp/qr', async (req, res) => {
+    try {
+        const qrData = whatsappService.getQRCode();
+        if (qrData) {
+            // Convertir QR a imagen base64
+            const qrImage = await QRCode.toDataURL(qrData);
+            res.json({ qr: qrImage, raw: qrData });
+        } else {
+            res.json({ qr: null, message: 'WhatsApp ya está conectado o el QR aún no está disponible' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Validar número de teléfono
+app.post('/api/whatsapp/validate-phone', (req, res) => {
+    const { phone } = req.body;
+    const validation = whatsappService.validatePhoneNumber(phone);
+    res.json(validation);
+});
+
+// Desconectar WhatsApp
+app.post('/api/whatsapp/disconnect', async (req, res) => {
+    try {
+        await whatsappService.disconnect();
+        res.json({ success: true, message: 'WhatsApp desconectado' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 // Iniciar servidor

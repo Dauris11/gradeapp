@@ -13,6 +13,9 @@ import CalendarPage from './pages/Calendar';
 import Reports from './pages/Reports';
 import Enrollments from './pages/Enrollments';
 import GradeManagement from './pages/GradeManagement';
+import Users from './pages/Users';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -21,6 +24,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/students" element={<Students />} />
@@ -30,6 +35,7 @@ function App() {
             <Route path="/grades" element={<Grades />} />
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/users" element={<Users />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
