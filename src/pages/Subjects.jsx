@@ -24,6 +24,7 @@ import {
 import { subjectsAPI, enrollmentsAPI, gradesAPI, studentsAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
 import ComponentsConfigurator from '../components/ComponentsConfigurator';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Container = styled.div`
   display: flex;
@@ -402,6 +403,7 @@ const SubmitBtn = styled(motion.button)`
 const Subjects = () => {
     const navigate = useNavigate();
     const toast = useToast();
+    const { t } = useLanguage();
     const [subjects, setSubjects] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -411,6 +413,8 @@ const Subjects = () => {
     const [availableStudents, setAvailableStudents] = useState([]);
     const [selectedStudentId, setSelectedStudentId] = useState('');
     const [expandedSubjects, setExpandedSubjects] = useState({});
+    const [periods, setPeriods] = useState([]);
+    const [activePeriod, setActivePeriod] = useState(null);
 
     // Default form data
     const [formData, setFormData] = useState({
@@ -421,13 +425,17 @@ const Subjects = () => {
         teacher: '',
         cycle: 'First cycle',
         color: '#6366F1',
+        periodId: null,
         components: [
             { id: 1, name: 'Tareas', type: 'numeric', weight: 40, maxScore: 100 },
             { id: 2, name: 'Exámenes', type: 'numeric', weight: 60, maxScore: 100 }
         ]
     });
 
-    useEffect(() => { loadSubjects(); }, []);
+    useEffect(() => {
+        loadSubjects();
+        loadPeriods();
+    }, []);
 
     const loadSubjects = async () => {
         try {
@@ -448,8 +456,60 @@ const Subjects = () => {
             });
             setSubjects(enrichedSubjects);
         } catch (error) {
-            toast.error('Error al cargar materias', 'Error');
+            toast.error(t('common.error'), t('common.error'));
         }
+    };
+
+    const loadPeriods = async () => {
+        try {
+            const response = await fetch('http://localhost:3001/api/academic/periods');
+            const data = await response.json();
+            setPeriods(data);
+
+            const active = data.find(p => p.isActive === 1);
+            setActivePeriod(active);
+        } catch (error) {
+            console.error('Error cargando períodos:', error);
+        }
+    };
+
+    const generateSubjectCode = (subjectName) => {
+        if (!subjectName || subjectName.trim() === '') return '';
+
+        // Obtener iniciales de las palabras principales
+        const words = subjectName.trim().split(' ').filter(word => word.length > 0);
+        let initials = '';
+
+        // Tomar las iniciales de las primeras 2-3 palabras significativas
+        const significantWords = words.filter(word =>
+            word.length > 2 &&
+            !['de', 'del', 'la', 'el', 'los', 'las', 'y', 'a', 'en'].includes(word.toLowerCase())
+        );
+
+        if (significantWords.length >= 2) {
+            initials = significantWords.slice(0, 2).map(w => w[0].toUpperCase()).join('');
+        } else if (significantWords.length === 1) {
+            // Si solo hay una palabra significativa, tomar las primeras 2 letras
+            initials = significantWords[0].substring(0, 2).toUpperCase();
+        } else if (words.length > 0) {
+            // Si no hay palabras significativas, usar las primeras palabras
+            initials = words.slice(0, 2).map(w => w[0].toUpperCase()).join('');
+        }
+
+        // Generar número secuencial basado en materias existentes con las mismas iniciales
+        const existingCodesWithInitials = subjects
+            .filter(s => s.code && s.code.startsWith(initials + '-'))
+            .map(s => {
+                const parts = s.code.split('-');
+                return parts.length > 1 ? parseInt(parts[1]) : 0;
+            })
+            .filter(num => !isNaN(num));
+
+        const nextNumber = existingCodesWithInitials.length > 0
+            ? Math.max(...existingCodesWithInitials) + 1
+            : 1;
+
+        return `${initials}-${String(nextNumber).padStart(3, '0')}`;
     };
 
     const filteredSubjects = subjects.filter(s =>
@@ -468,6 +528,7 @@ const Subjects = () => {
                 teacher: subject.teacher || '',
                 cycle: subject.cycle || 'First cycle',
                 color: subject.color || '#6366F1',
+                periodId: subject.periodId || activePeriod?.id || null,
                 components: subject.components || [
                     { id: 1, name: 'Tareas', type: 'numeric', weight: 40, maxScore: 100 },
                     { id: 2, name: 'Exámenes', type: 'numeric', weight: 60, maxScore: 100 }
@@ -478,6 +539,7 @@ const Subjects = () => {
             setFormData({
                 name: '', code: '', credits: '', schedule: '', teacher: '',
                 cycle: 'First cycle', color: '#6366F1',
+                periodId: activePeriod?.id || null,
                 components: [
                     { id: 1, name: 'Tareas', type: 'numeric', weight: 40, maxScore: 100 },
                     { id: 2, name: 'Exámenes', type: 'numeric', weight: 60, maxScore: 100 }
@@ -707,17 +769,29 @@ const Subjects = () => {
                                         <Input
                                             placeholder="Ej. Análisis de Redes"
                                             value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            onChange={(e) => {
+                                                const newName = e.target.value;
+                                                const newCode = !editingSubject ? generateSubjectCode(newName) : formData.code;
+                                                setFormData({
+                                                    ...formData,
+                                                    name: newName,
+                                                    code: newCode
+                                                });
+                                            }}
                                             required
                                         />
                                     </FormGroup>
                                     <FormGroup>
-                                        <label>Código</label>
+                                        <label>Código (Auto-generado)</label>
                                         <Input
-                                            placeholder="AR-101"
+                                            placeholder="XX-000"
                                             value={formData.code}
-                                            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                            required
+                                            readOnly
+                                            style={{
+                                                background: '#f1f5f9',
+                                                cursor: 'not-allowed',
+                                                color: '#64748b'
+                                            }}
                                         />
                                     </FormGroup>
                                 </div>
@@ -754,14 +828,24 @@ const Subjects = () => {
                                 </FormGroup>
 
                                 <FormGroup>
-                                    <label>Ciclo Académico</label>
+                                    <label>Período Académico</label>
                                     <Select
-                                        value={formData.cycle}
-                                        onChange={(e) => setFormData({ ...formData, cycle: e.target.value })}
+                                        value={formData.periodId || ''}
+                                        onChange={(e) => setFormData({
+                                            ...formData,
+                                            periodId: e.target.value ? parseInt(e.target.value) : null
+                                        })}
+                                        required
                                     >
-                                        <option value="First cycle">Primer Cuatrimestre</option>
-                                        <option value="Second cycle">Segundo Cuatrimestre</option>
-                                        <option value="Third cycle">Tercer Cuatrimestre</option>
+                                        <option value="">-- Seleccionar Período --</option>
+                                        {periods.map(period => (
+                                            <option
+                                                key={period.id}
+                                                value={period.id}
+                                            >
+                                                {period.name} {period.isActive === 1 ? '✓ Activo' : ''}
+                                            </option>
+                                        ))}
                                     </Select>
                                 </FormGroup>
 

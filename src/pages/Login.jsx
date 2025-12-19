@@ -2,26 +2,16 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, LogIn, GraduationCap, Eye, EyeOff, X, ArrowRight, ShieldCheck } from 'lucide-react';
+import { User, Lock, LogIn, GraduationCap, Eye, EyeOff, X, ArrowRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Container = styled.div`
   min-height: 100vh;
   display: flex;
-  background: ${props => props.theme.colors.slate[950]};
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   font-family: ${props => props.theme.typography.fontFamily};
   overflow: hidden;
   position: relative;
-`;
-
-const BackgroundShape = styled(motion.div)`
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: ${props => props.theme.colors.gradients.primary};
-  filter: blur(120px);
-  opacity: 0.2;
-  z-index: 0;
 `;
 
 const LeftPanel = styled.div`
@@ -30,8 +20,8 @@ const LeftPanel = styled.div`
   flex-direction: column;
   justify-content: center;
   padding: 80px;
+  background: white;
   position: relative;
-  z-index: 1;
 
   @media (max-width: 1024px) {
     display: none;
@@ -48,31 +38,31 @@ const BrandBadge = styled.div`
 const LogoIcon = styled.div`
   width: 48px;
   height: 48px;
-  background: ${props => props.theme.colors.gradients.primary};
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 `;
 
 const BrandName = styled.h2`
   font-size: 24px;
   font-weight: 800;
-  color: white;
+  color: ${props => props.theme.colors.slate[900]};
   letter-spacing: -0.02em;
 `;
 
 const HeroTitle = styled(motion.h1)`
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
   font-weight: 900;
-  color: white;
+  color: ${props => props.theme.colors.slate[900]};
   line-height: 1.1;
   margin-bottom: 24px;
   letter-spacing: -0.04em;
 
   span {
-    background: ${props => props.theme.colors.gradients.primary};
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -80,7 +70,7 @@ const HeroTitle = styled(motion.h1)`
 
 const HeroSubtitle = styled.p`
   font-size: 18px;
-  color: ${props => props.theme.colors.slate[400]};
+  color: ${props => props.theme.colors.slate[600]};
   max-width: 500px;
   line-height: 1.6;
   margin-bottom: 48px;
@@ -89,31 +79,34 @@ const HeroSubtitle = styled.p`
 const FeatureGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
+  gap: 20px;
 `;
 
 const FeatureCard = styled.div`
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 24px;
-  border-radius: 20px;
+  background: ${props => props.theme.colors.slate[50]};
+  border: 1px solid ${props => props.theme.colors.slate[200]};
+  padding: 20px;
+  border-radius: 16px;
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(99, 102, 241, 0.3);
-    transform: translateY(-5px);
+    background: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
   }
 
   h4 {
-    color: white;
+    color: ${props => props.theme.colors.slate[900]};
     margin-bottom: 8px;
     font-size: 16px;
+    font-weight: 600;
   }
 
   p {
-    color: ${props => props.theme.colors.slate[500]};
+    color: ${props => props.theme.colors.slate[600]};
     font-size: 13px;
+    line-height: 1.5;
   }
 `;
 
@@ -124,12 +117,9 @@ const RightPanel = styled.div`
   justify-content: center;
   padding: 40px;
   position: relative;
-  z-index: 1;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(10px);
 
   @media (max-width: 1024px) {
-    background: ${props => props.theme.colors.slate[950]};
+    background: white;
   }
 `;
 
@@ -145,13 +135,13 @@ const LoginHeader = styled.div`
 const LoginTitle = styled.h2`
   font-size: 32px;
   font-weight: 800;
-  color: white;
+  color: ${props => props.theme.colors.slate[900]};
   margin-bottom: 12px;
   letter-spacing: -0.02em;
 `;
 
 const LoginSubtitle = styled.p`
-  color: ${props => props.theme.colors.slate[400]};
+  color: ${props => props.theme.colors.slate[600]};
   font-size: 15px;
 `;
 
@@ -170,7 +160,7 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 13px;
   font-weight: 600;
-  color: ${props => props.theme.colors.slate[300]};
+  color: ${props => props.theme.colors.slate[700]};
   margin-left: 4px;
 `;
 
@@ -182,30 +172,32 @@ const InputContainer = styled.div`
 
 const StyledInput = styled.input`
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: white;
+  border: 2px solid ${props => props.theme.colors.slate[200]};
   border-radius: 14px;
   padding: 14px 16px 14px 44px;
-  color: white;
+  color: ${props => props.theme.colors.slate[900]};
   font-size: 15px;
   transition: all 0.2s ease;
 
   &::placeholder {
-    color: ${props => props.theme.colors.slate[600]};
+    color: ${props => props.theme.colors.slate[400]};
   }
 
   &:focus {
     outline: none;
-    border-color: ${props => props.theme.colors.primary.main};
-    background: rgba(99, 102, 241, 0.05);
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
   }
 `;
 
 const InputIcon = styled.div`
   position: absolute;
   left: 16px;
-  color: ${props => props.theme.colors.slate[500]};
+  color: ${props => props.theme.colors.slate[400]};
+  display: flex;
+  align-items: center;
 `;
 
 const PasswordToggle = styled.button`
@@ -216,9 +208,10 @@ const PasswordToggle = styled.button`
   color: ${props => props.theme.colors.slate[500]};
   display: flex;
   padding: 4px;
+  cursor: pointer;
 
   &:hover {
-    color: white;
+    color: ${props => props.theme.colors.slate[700]};
   }
 `;
 
@@ -234,11 +227,14 @@ const RememberMe = styled.label`
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: ${props => props.theme.colors.slate[400]};
+  color: ${props => props.theme.colors.slate[600]};
   cursor: pointer;
 
   input {
-    accent-color: ${props => props.theme.colors.primary.main};
+    width: 18px;
+    height: 18px;
+    accent-color: #667eea;
+    cursor: pointer;
   }
 `;
 
@@ -247,17 +243,18 @@ const ForgotPasswordLink = styled.button`
   border: none;
   font-size: 13px;
   font-weight: 600;
-  color: ${props => props.theme.colors.primary.main};
+  color: #667eea;
+  cursor: pointer;
   
   &:hover {
-    color: ${props => props.theme.colors.primary.light};
+    color: #764ba2;
     text-decoration: underline;
   }
 `;
 
 const SubmitButton = styled(motion.button)`
   width: 100%;
-  background: ${props => props.theme.colors.gradients.primary};
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border-radius: 14px;
   padding: 16px;
@@ -267,8 +264,9 @@ const SubmitButton = styled(motion.button)`
   align-items: center;
   justify-content: center;
   gap: 12px;
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
   margin-top: 8px;
+  cursor: pointer;
 
   &:disabled {
     opacity: 0.7;
@@ -277,9 +275,9 @@ const SubmitButton = styled(motion.button)`
 `;
 
 const ErrorMsg = styled(motion.div)`
-  background: rgba(244, 63, 94, 0.1);
-  border: 1px solid rgba(244, 63, 94, 0.2);
-  color: #fb7185;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
   padding: 12px 16px;
   border-radius: 12px;
   font-size: 13px;
@@ -289,56 +287,13 @@ const ErrorMsg = styled(motion.div)`
   gap: 8px;
 `;
 
-const ModalOverlay = styled(motion.div)`
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
-`;
-
-const ModalContent = styled(motion.div)`
-  background: ${props => props.theme.colors.slate[900]};
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
-  padding: 40px;
-  max-width: 440px;
-  width: 100%;
-  position: relative;
-`;
-
-const CloseIconButton = styled.button`
-  position: absolute;
-  top: 24px;
-  right: 24px;
-  color: ${props => props.theme.colors.slate[500]};
-  background: rgba(255, 255, 255, 0.05);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-`;
-
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ username: '', password: '', remember: false });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showResetModal, setShowResetModal] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetMessage, setResetMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -358,7 +313,7 @@ const Login = () => {
       const data = await response.json();
 
       if (data.success) {
-        sessionStorage.setItem('user', JSON.stringify(data.user));
+        login(data.user);
         navigate('/dashboard');
       } else {
         setError(data.message || 'Credenciales inválidas');
@@ -370,86 +325,43 @@ const Login = () => {
     }
   };
 
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setResetMessage('');
-
-    try {
-      const response = await fetch('http://localhost:3001/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resetEmail })
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setResetMessage(`✅ Enviado. Contraseña: ${data.password}`);
-      } else {
-        setResetMessage(`❌ ${data.message}`);
-      }
-    } catch (err) {
-      setResetMessage('❌ Error de conexión');
-    }
-  };
-
   return (
     <Container>
-      <BackgroundShape
-        animate={{
-          x: [0, 100, 0],
-          y: [0, 50, 0],
-          scale: [1, 1.2, 1]
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ top: '-10%', left: '-10%' }}
-      />
-
-      <BackgroundShape
-        animate={{
-          x: [0, -100, 0],
-          y: [0, -50, 0],
-          scale: [1, 1.3, 1]
-        }}
-        transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ bottom: '-10%', right: '-10%', background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)' }}
-      />
-
       <LeftPanel>
         <BrandBadge>
           <LogoIcon>
-            <GraduationCap color="white" size={28} />
+            <GraduationCap size={28} color="white" />
           </LogoIcon>
           <BrandName>GradePro</BrandName>
         </BrandBadge>
 
         <HeroTitle
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6 }}
         >
-          Gestiona el <span>Éxito Académico</span> con Inteligencia.
+          Gestión Académica <span>Moderna</span>
         </HeroTitle>
 
         <HeroSubtitle>
-          La plataforma más avanzada para la gestión de calificaciones, reportes y comunicación institucional.
+          Sistema completo para administrar calificaciones, estudiantes y reportes de manera eficiente.
         </HeroSubtitle>
 
         <FeatureGrid>
           <FeatureCard>
-            <h4>Automatización</h4>
-            <p>Calcula promedios y genera reportes en segundos.</p>
+            <h4>📊 Control Total</h4>
+            <p>Gestiona calificaciones y promedios en tiempo real.</p>
           </FeatureCard>
           <FeatureCard>
-            <h4>Comunicación</h4>
-            <p>Envía notas vía WhatsApp y Email de forma masiva.</p>
+            <h4>👥 Estudiantes</h4>
+            <p>Administra información completa de cada alumno.</p>
           </FeatureCard>
           <FeatureCard>
-            <h4>Seguridad</h4>
-            <p>Tus datos protegidos con los estándares más altos.</p>
+            <h4>📱 Reportes</h4>
+            <p>Genera y envía reportes por email y WhatsApp.</p>
           </FeatureCard>
           <FeatureCard>
-            <h4>Analítica</h4>
+            <h4>📈 Analítica</h4>
             <p>Visualiza el progreso de cada alumno gráficamente.</p>
           </FeatureCard>
         </FeatureGrid>
@@ -471,14 +383,13 @@ const Login = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
             >
-              <ShieldCheck size={18} />
               {error}
             </ErrorMsg>
           )}
 
           <Form onSubmit={handleSubmit}>
             <FormGroup>
-              <Label>Usuario o Email</Label>
+              <Label>Usuario</Label>
               <InputContainer>
                 <InputIcon><User size={18} /></InputIcon>
                 <StyledInput
@@ -517,7 +428,7 @@ const Login = () => {
                 />
                 Recordarme
               </RememberMe>
-              <ForgotPasswordLink type="button" onClick={() => setShowResetModal(true)}>
+              <ForgotPasswordLink type="button">
                 ¿Olvidaste tu contraseña?
               </ForgotPasswordLink>
             </ActionRow>
@@ -534,69 +445,8 @@ const Login = () => {
           </Form>
         </LoginBox>
       </RightPanel>
-
-      <AnimatePresence>
-        {showResetModal && (
-          <ModalOverlay
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowResetModal(false)}
-          >
-            <ModalContent
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <CloseIconButton onClick={() => setShowResetModal(false)}>
-                <X size={18} />
-              </CloseIconButton>
-
-              <LoginHeader>
-                <LoginTitle style={{ fontSize: '24px' }}>Recuperar</LoginTitle>
-                <LoginSubtitle>Te enviaremos las instrucciones de acceso.</LoginSubtitle>
-              </LoginHeader>
-
-              <form onSubmit={handleResetPassword}>
-                <FormGroup style={{ marginBottom: '24px' }}>
-                  <Label>Email Institucional</Label>
-                  <InputContainer>
-                    <InputIcon><User size={18} /></InputIcon>
-                    <StyledInput
-                      type="email"
-                      placeholder="ejemplo@escuela.com"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      required
-                    />
-                  </InputContainer>
-                </FormGroup>
-
-                {resetMessage && (
-                  <div style={{
-                    marginBottom: '20px',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    color: '#34d399',
-                    fontSize: '14px'
-                  }}>
-                    {resetMessage}
-                  </div>
-                )}
-
-                <SubmitButton type="submit" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  Enviar Instrucciones
-                </SubmitButton>
-              </form>
-            </ModalContent>
-          </ModalOverlay>
-        )}
-      </AnimatePresence>
     </Container>
   );
 };
 
 export default Login;
-

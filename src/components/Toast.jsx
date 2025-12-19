@@ -30,7 +30,7 @@ const ToastItem = styled(motion.div)`
 const IconWrapper = styled.div`
   width: 2.5rem;
   height: 2.5rem;
-  background: ${props => props.bgColor};
+  background: ${props => props.$bgColor};
   border-radius: ${props => props.theme.borderRadius.full};
   display: flex;
   align-items: center;
@@ -119,7 +119,7 @@ export const Toast = ({ toasts, removeToast }) => {
                             exit={{ opacity: 0, x: 100, scale: 0.8 }}
                             transition={{ duration: 0.3 }}
                         >
-                            <IconWrapper color={config.color} bgColor={config.bgColor}>
+                            <IconWrapper color={config.color} $bgColor={config.bgColor}>
                                 <Icon size={20} />
                             </IconWrapper>
                             <Content>

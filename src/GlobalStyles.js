@@ -1,18 +1,19 @@
 import { createGlobalStyle } from 'styled-components';
 
 const GlobalStyles = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;900&family=Inter:wght@300;400;500;600;700&display=swap');
-
   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color ${props => props.theme.transitions.base}, 
+                color ${props => props.theme.transitions.base},
+                border-color ${props => props.theme.transitions.base};
   }
 
   :root {
-    color-scheme: light;
+    color-scheme: ${props => props.theme.mode};
   }
 
   body {
@@ -88,6 +89,15 @@ const GlobalStyles = createGlobalStyle`
     opacity: 0;
     transform: translateY(-10px);
     transition: opacity 300ms, transform 300ms;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* Utility Classes */

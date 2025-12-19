@@ -1,7 +1,8 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.join(__dirname, 'grade_manager.db');
+const dbPath = process.env.DB_PATH_CUSTOM || path.join(__dirname, 'grade_manager.db');
+console.log('📂 Usando base de datos en:', dbPath);
 const db = new Database(dbPath);
 
 // Habilitar foreign keys

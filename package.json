@@ -44,5 +44,42 @@
     "react-router-dom": "^7.10.1",
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.4.0"
+  },
+  "build": {
+    "appId": "com.grademanager.app",
+    "productName": "Grade Manager",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/imagenes/logo-principal.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "dist/**/*",
+      "electron-main/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "backend",
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!node_modules/.bin",
+          "!node_modules/**/*.md",
+          "!**/*.db",
+          "!**/*.sqlite",
+          "!whatsapp-session"
+        ]
+      }
+    ]
   }
 }

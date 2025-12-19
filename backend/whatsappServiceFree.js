@@ -63,10 +63,21 @@ const initializeWhatsApp = () => {
     });
 
     // Evento: Desconectado
-    whatsappClient.on('disconnected', (reason) => {
+    whatsappClient.on('disconnected', async (reason) => {
         console.log('⚠️ WhatsApp desconectado:', reason);
         isReady = false;
         qrCodeData = null;
+
+        // Destruir cliente actual y reinicializar para generar nuevo QR
+        try {
+            await whatsappClient.destroy();
+        } catch (err) {
+            console.error('Error al destruir cliente desconectado:', err);
+        }
+        
+        whatsappClient = null;
+        console.log('🔄 Reiniciando sesión de WhatsApp para generar nuevo QR...');
+        initializeWhatsApp();
     });
 
     // Inicializar
@@ -87,15 +98,27 @@ const sendWhatsAppMessage = async (to, message) => {
             throw new Error('WhatsApp no está conectado. Por favor, escanea el código QR primero.');
         }
 
-        // Formatear número (agregar @c.us al final)
-        const chatId = to.includes('@c.us') ? to : `${to}@c.us`;
+        // Limpiar y formatear número
+        const cleanNumber = to.replace(/[^\d]/g, '');
+        const chatId = cleanNumber.includes('@c.us') ? cleanNumber : `${cleanNumber}@c.us`;
 
-        console.log(`📱 Enviando WhatsApp a: ${to}`);
+        console.log(`📱 Intentando enviar WhatsApp a: ${cleanNumber}`);
+        
+        // Verificar si el número está registrado en WhatsApp
+        try {
+            const isRegistered = await whatsappClient.isRegisteredUser(chatId);
+            if (!isRegistered) {
+                throw new Error(`El número ${cleanNumber} no está registrado en WhatsApp. Verifica que el número sea correcto y tenga WhatsApp activo.`);
+            }
+        } catch (checkError) {
+            console.error('Error verificando número:', checkError);
+            throw new Error(`No se pudo verificar el número ${cleanNumber}. Asegúrate de que el formato sea correcto (ej: 18091234567 para RD).`);
+        }
         
         // Enviar mensaje
         const response = await whatsappClient.sendMessage(chatId, message);
         
-        console.log(`✅ WhatsApp enviado exitosamente a ${to}`);
+        console.log(`✅ WhatsApp enviado exitosamente a ${cleanNumber}`);
         return {
             success: true,
             message: `WhatsApp enviado exitosamente a ${to}`,

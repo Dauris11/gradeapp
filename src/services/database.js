@@ -9,6 +9,8 @@ export const studentsAPI = apiService.studentsAPI;
 export const subjectsAPI = apiService.subjectsAPI;
 export const enrollmentsAPI = apiService.enrollmentsAPI;
 export const gradesAPI = apiService.gradesAPI;
+export const calendarAPI = apiService.calendarAPI;
+export const notificationsAPI = apiService.notificationsAPI;
 
 export default {
     initDatabase,
@@ -16,5 +18,7 @@ export default {
     studentsAPI,
     subjectsAPI,
     enrollmentsAPI,
-    gradesAPI
+    gradesAPI,
+    calendarAPI,
+    notificationsAPI
 };

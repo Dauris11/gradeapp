@@ -2,20 +2,17 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    UserPlus,
-    Search,
-    Plus,
-    Trash2,
-    Award,
-    BookOpen,
-    Users,
-    X,
-    Filter,
-    CheckCircle2,
-    AlertCircle
+  UserPlus,
+  Search,
+  Plus,
+  Trash2,
+  Users,
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { studentsAPI, subjectsAPI, enrollmentsAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Container = styled.div`
   display: flex;
@@ -139,7 +136,7 @@ const EnrollmentCard = styled(motion.div)`
 
 const CardTop = styled.div`
   height: 6px;
-  background: linear-gradient(to right, ${props => props.color});
+  background: linear-gradient(to right, ${props => props.$color});
 `;
 
 const CardBody = styled.div`
@@ -158,7 +155,7 @@ const CardHeader = styled.div`
 const IconBox = styled.div`
   width: 44px;
   height: 44px;
-  background: ${props => props.bg};
+  background: ${props => props.$bg};
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -220,175 +217,176 @@ const ModalContent = styled(motion.div)`
 `;
 
 const Enrollments = () => {
-    const [students, setStudents] = useState([]);
-    const [subjects, setSubjects] = useState([]);
-    const [enrollments, setEnrollments] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStudent, setFilterStudent] = useState('all');
-    const [filterSubject, setFilterSubject] = useState('all');
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [formData, setFormData] = useState({ studentId: '', subjectId: '' });
-    const toast = useToast();
+  const { t } = useLanguage();
+  const [students, setStudents] = useState([]);
+  const [subjects, setSubjects] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStudent, setFilterStudent] = useState('all');
+  const [filterSubject, setFilterSubject] = useState('all');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ studentId: '', subjectId: '' });
+  const toast = useToast();
 
-    useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); }, []);
 
-    const loadData = async () => {
-        try {
-            const [st, su, en] = await Promise.all([
-                studentsAPI.getAll(), subjectsAPI.getAll(), enrollmentsAPI.getAll()
-            ]);
-            setStudents(st); setSubjects(su); setEnrollments(en);
-        } catch (err) { console.error(err); }
-    };
+  const loadData = async () => {
+    try {
+      const [st, su, en] = await Promise.all([
+        studentsAPI.getAll(), subjectsAPI.getAll(), enrollmentsAPI.getAll()
+      ]);
+      setStudents(st); setSubjects(su); setEnrollments(en);
+    } catch (err) { console.error(err); }
+  };
 
-    const filtered = enrollments.filter(e => {
-        const matchSearch = e.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) || e.subjectName?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchStudent = filterStudent === 'all' || e.studentId === parseInt(filterStudent);
-        const matchSubject = filterSubject === 'all' || e.subjectId === parseInt(filterSubject);
-        return matchSearch && matchStudent && matchSubject;
-    });
+  const filtered = enrollments.filter(e => {
+    const matchSearch = e.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) || e.subjectName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStudent = filterStudent === 'all' || e.studentId === parseInt(filterStudent);
+    const matchSubject = filterSubject === 'all' || e.subjectId === parseInt(filterSubject);
+    return matchSearch && matchStudent && matchSubject;
+  });
 
-    const handleDelete = async (id, sName, suName) => {
-        if (window.confirm(`¿Retirar a ${sName} de ${suName}?`)) {
-            try {
-                await enrollmentsAPI.delete(id);
-                toast.success('Retiro completado');
-                await loadData();
-            } catch (err) { toast.error('Error: Posiblemente tiene notas registradas'); }
-        }
-    };
+  const handleDelete = async (id, sName, suName) => {
+    if (window.confirm(`${t('common.confirm')}? ${sName} - ${suName}`)) {
+      try {
+        await enrollmentsAPI.delete(id);
+        toast.success(t('common.success'));
+        await loadData();
+      } catch (err) { toast.error(t('common.error')); }
+    }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const student = students.find(s => s.id === parseInt(formData.studentId));
-        const subject = subjects.find(s => s.id === parseInt(formData.subjectId));
-        if (!student || !subject) return;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const student = students.find(s => s.id === parseInt(formData.studentId));
+    const subject = subjects.find(s => s.id === parseInt(formData.subjectId));
+    if (!student || !subject) return;
 
-        if (enrollments.some(e => e.studentId === student.id && e.subjectId === subject.id)) {
-            return toast.warning('Ya está inscrito');
-        }
+    if (enrollments.some(e => e.studentId === student.id && e.subjectId === subject.id)) {
+      return toast.warning(t('common.warning'));
+    }
 
-        try {
-            await enrollmentsAPI.create({
-                studentId: student.id, studentName: student.name,
-                subjectId: subject.id, subjectName: subject.name,
-                subjectCode: subject.code, color: subject.color
-            });
-            await loadData(); setIsModalOpen(false); toast.success('Inscripción exitosa');
-        } catch (err) { toast.error('Error al inscribir'); }
-    };
+    try {
+      await enrollmentsAPI.create({
+        studentId: student.id, studentName: student.name,
+        subjectId: subject.id, subjectName: subject.name,
+        subjectCode: subject.code, color: subject.color
+      });
+      await loadData(); setIsModalOpen(false); toast.success(t('common.success'));
+    } catch (err) { toast.error(t('common.error')); }
+  };
 
-    const getGradeStyles = (grade) => {
-        if (!grade) return { bg: '#F1F5F9', color: '#64748B' };
-        if (grade >= 90) return { bg: '#ECFDF5', color: '#10B981' };
-        if (grade >= 80) return { bg: '#EEF2FF', color: '#6366F1' };
-        if (grade >= 70) return { bg: '#FFFBEB', color: '#F59E0B' };
-        return { bg: '#FEF2F2', color: '#EF4444' };
-    };
+  const getGradeStyles = (grade) => {
+    if (!grade) return { bg: '#F1F5F9', color: '#64748B' };
+    if (grade >= 90) return { bg: '#ECFDF5', color: '#10B981' };
+    if (grade >= 80) return { bg: '#EEF2FF', color: '#6366F1' };
+    if (grade >= 70) return { bg: '#FFFBEB', color: '#F59E0B' };
+    return { bg: '#FEF2F2', color: '#EF4444' };
+  };
 
-    return (
-        <Container>
-            <Toast toasts={toast.toasts} removeToast={toast.removeToast} />
-            <Header>
-                <TitleSection>
-                    <h1>Inscripciones</h1>
-                    <p>Relación académica entre estudiantes y materias curriculares</p>
-                </TitleSection>
-                <AddButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setIsModalOpen(true)}>
-                    <UserPlus size={20} /> Inscribir Alumno
-                </AddButton>
-            </Header>
+  return (
+    <Container>
+      <Toast toasts={toast.toasts} removeToast={toast.removeToast} />
+      <Header>
+        <TitleSection>
+          <h1>{t('nav.enrollments')}</h1>
+          <p>{t('subjects.subtitle')}</p>
+        </TitleSection>
+        <AddButton whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => setIsModalOpen(true)}>
+          <UserPlus size={20} /> {t('common.add')}
+        </AddButton>
+      </Header>
 
-            <FiltersCard>
-                <InputWrapper>
-                    <Search size={18} />
-                    <Input placeholder="Buscar por nombre o materia..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                </InputWrapper>
-                <Select value={filterStudent} onChange={e => setFilterStudent(e.target.value)}>
-                    <option value="all">Filtro por Estudiante</option>
+      <FiltersCard>
+        <InputWrapper>
+          <Search size={18} />
+          <Input placeholder={t('common.search') + "..."} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        </InputWrapper>
+        <Select value={filterStudent} onChange={e => setFilterStudent(e.target.value)}>
+          <option value="all">{t('common.filter')}: {t('students.title')}</option>
+          {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </Select>
+        <Select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+          <option value="all">{t('common.filter')}: {t('subjects.title')}</option>
+          {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </Select>
+      </FiltersCard>
+
+      <Grid>
+        {filtered.map((en, idx) => {
+          const styles = getGradeStyles(en.grade);
+          return (
+            <EnrollmentCard key={en.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} whileHover={{ y: -8 }}>
+              <CardTop $color={en.color || '#6366F1, #8B5CF6'} />
+              <CardBody>
+                <CardHeader>
+                  <IconBox $bg={en.color || '#6366F1'}><Users size={20} /></IconBox>
+                  <motion.button
+                    onClick={() => handleDelete(en.id, en.studentName, en.subjectName)}
+                    style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
+                </CardHeader>
+                <StudentInfo>
+                  <h3>{en.studentName}</h3>
+                  <div><UserPlus size={14} /> {t('nav.enrollments')}</div>
+                </StudentInfo>
+                <SubjectInfo>
+                  <h4>{en.subjectName}</h4>
+                  <p>{t('subjects.code')}: {en.subjectCode}</p>
+                </SubjectInfo>
+                <GradeBadge $bg={styles.bg} $color={styles.color}>
+                  <span>{t('grades.average') || 'Promedio'}</span>
+                  <div>{en.grade ? `${en.grade}%` : 'S/N'}</div>
+                </GradeBadge>
+              </CardBody>
+            </EnrollmentCard>
+          );
+        })}
+      </Grid>
+
+      {filtered.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '80px', background: 'white', borderRadius: '32px' }}>
+          <AlertCircle size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+          <h3 style={{ color: '#64748b' }}>{t('common.noData')}</h3>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {isModalOpen && (
+          <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)}>
+            <ModalContent initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '800' }}>{t('common.add')}</h2>
+                <button onClick={() => setIsModalOpen(false)} style={{ border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '700' }}>{t('students.title')}</label>
+                  <Select required value={formData.studentId} onChange={e => setFormData({ ...formData, studentId: e.target.value })}>
+                    <option value="">{t('common.search')}...</option>
                     {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select>
-                <Select value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
-                    <option value="all">Filtro por Materia</option>
-                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select>
-            </FiltersCard>
-
-            <Grid>
-                {filtered.map((en, idx) => {
-                    const styles = getGradeStyles(en.grade);
-                    return (
-                        <EnrollmentCard key={en.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} whileHover={{ y: -8 }}>
-                            <CardTop color={en.color || '#6366F1, #8B5CF6'} />
-                            <CardBody>
-                                <CardHeader>
-                                    <IconBox bg={en.color || '#6366F1'}><Users size={20} /></IconBox>
-                                    <motion.button
-                                        onClick={() => handleDelete(en.id, en.studentName, en.subjectName)}
-                                        style={{ background: '#FEE2E2', color: '#EF4444', border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}
-                                        whileHover={{ scale: 1.1 }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </motion.button>
-                                </CardHeader>
-                                <StudentInfo>
-                                    <h3>{en.studentName}</h3>
-                                    <div><UserPlus size={14} /> Registro Académico</div>
-                                </StudentInfo>
-                                <SubjectInfo>
-                                    <h4>{en.subjectName}</h4>
-                                    <p>Código: {en.subjectCode}</p>
-                                </SubjectInfo>
-                                <GradeBadge bg={styles.bg} color={styles.color}>
-                                    <span>Promedio Actual</span>
-                                    <div>{en.grade ? `${en.grade}%` : 'S/N'}</div>
-                                </GradeBadge>
-                            </CardBody>
-                        </EnrollmentCard>
-                    );
-                })}
-            </Grid>
-
-            {filtered.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '80px', background: 'white', borderRadius: '32px' }}>
-                    <AlertCircle size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
-                    <h3 style={{ color: '#64748b' }}>No se encontraron inscripciones</h3>
+                  </Select>
                 </div>
-            )}
-
-            <AnimatePresence>
-                {isModalOpen && (
-                    <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)}>
-                        <ModalContent initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                                <h2 style={{ fontSize: '24px', fontWeight: '800' }}>Inscribir Alumno</h2>
-                                <button onClick={() => setIsModalOpen(false)} style={{ border: 'none', padding: '8px', borderRadius: '10px', cursor: 'pointer' }}><X size={20} /></button>
-                            </div>
-                            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <label style={{ fontSize: '14px', fontWeight: '700' }}>Seleccionar Estudiante</label>
-                                    <Select required value={formData.studentId} onChange={e => setFormData({ ...formData, studentId: e.target.value })}>
-                                        <option value="">Buscar estudiante...</option>
-                                        {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                                    </Select>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    <label style={{ fontSize: '14px', fontWeight: '700' }}>Seleccionar Materia</label>
-                                    <Select required value={formData.subjectId} onChange={e => setFormData({ ...formData, subjectId: e.target.value })}>
-                                        <option value="">Buscar materia...</option>
-                                        {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
-                                    </Select>
-                                </div>
-                                <AddButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>
-                                    <Plus size={18} /> Confirmar Inscripción
-                                </AddButton>
-                            </form>
-                        </ModalContent>
-                    </ModalOverlay>
-                )}
-            </AnimatePresence>
-        </Container>
-    );
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '700' }}>{t('subjects.title')}</label>
+                  <Select required value={formData.subjectId} onChange={e => setFormData({ ...formData, subjectId: e.target.value })}>
+                    <option value="">{t('common.search')}...</option>
+                    {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
+                  </Select>
+                </div>
+                <AddButton type="submit" style={{ width: '100%', justifyContent: 'center', marginTop: '12px' }}>
+                  <Plus size={18} /> {t('common.confirm')}
+                </AddButton>
+              </form>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
+    </Container>
+  );
 };
 
 export default Enrollments;

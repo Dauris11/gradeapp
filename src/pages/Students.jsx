@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { studentsAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Container = styled.div`
   display: flex;
@@ -52,7 +53,7 @@ const HeaderTitle = styled.div`
 `;
 
 const ActionButton = styled(motion.button)`
-  background: ${props => props.theme.colors.gradients.primary};
+  background: ${props => props.theme.colors.primary.main};
   color: white;
   padding: 12px 24px;
   border-radius: 14px;
@@ -61,6 +62,8 @@ const ActionButton = styled(motion.button)`
   align-items: center;
   gap: 10px;
   box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+  border: none;
+  cursor: pointer;
 `;
 
 const TopBar = styled.div`
@@ -116,7 +119,7 @@ const FilterButton = styled.button`
   display: flex;
   align-items: center;
   gap: 8px;
-
+  
   &:hover {
     background: ${props => props.theme.colors.slate[50]};
   }
@@ -124,7 +127,7 @@ const FilterButton = styled.button`
 
 const StudentsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: ${props => props.theme.spacing.lg};
 `;
 
@@ -137,18 +140,7 @@ const StudentCard = styled(motion.div)`
   gap: 20px;
   position: relative;
   overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 100px;
-    height: 100px;
-    background: ${props => props.theme.colors.gradients.primary};
-    opacity: 0.05;
-    filter: blur(40px);
-  }
+  border: 1px solid ${props => props.theme.colors.border};
 `;
 
 const CardHeader = styled.div`
@@ -160,108 +152,122 @@ const CardHeader = styled.div`
 const UserAvatar = styled.div`
   width: 56px;
   height: 56px;
-  border-radius: 16px;
   background: ${props => props.theme.colors.gradients.primary};
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
   font-size: 20px;
   font-weight: 800;
+  color: white;
   box-shadow: 0 8px 16px rgba(99, 102, 241, 0.2);
-`;
-
-const IconButton = styled.button`
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid ${props => props.theme.colors.slate[200]};
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${props => props.color || props.theme.colors.slate[400]};
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${props => props.theme.colors.slate[50]};
-    border-color: ${props => props.color || props.theme.colors.primary.main};
-    color: ${props => props.color || props.theme.colors.primary.main};
-  }
 `;
 
 const StudentInfo = styled.div`
   h3 {
-    font-size: 19px;
+    font-size: 18px;
     font-weight: 700;
-    color: ${props => props.theme.colors.slate[900]};
     margin-bottom: 4px;
+    color: ${props => props.theme.colors.slate[900]};
   }
   p {
-    font-size: 14px;
+    font-size: 13px;
     color: ${props => props.theme.colors.slate[500]};
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-bottom: 2px;
   }
 `;
 
 const BadgeContainer = styled.div`
   display: flex;
   gap: 8px;
+  margin-bottom: 8px;
 `;
 
 const Badge = styled.span`
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 4px 12px;
+  padding: 4px 10px;
   border-radius: 20px;
   background: ${props => props.bg};
   color: ${props => props.color};
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 `;
 
 const StatsRow = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  padding-top: 16px;
-  border-top: 1px solid ${props => props.theme.colors.slate[100]};
+  display: flex;
+  justify-content: space-between;
+  padding-top: 20px;
+  border-top: 1px solid ${props => props.theme.colors.border};
 `;
 
 const MiniStat = styled.div`
-  font-size: 12px;
-  color: ${props => props.theme.colors.slate[500]};
+  display: flex;
+  flex-direction: column;
+  font-size: 11px;
+  font-weight: 600;
+  color: ${props => props.theme.colors.slate[400]};
+  text-transform: uppercase;
+  
   span {
-    display: block;
     font-size: 15px;
     font-weight: 700;
-    color: ${props => props.theme.colors.slate[900]};
+    color: ${props => props.theme.colors.slate[800]};
+    margin-top: 2px;
   }
 `;
 
 const ViewProfileBtn = styled.button`
   width: 100%;
   padding: 12px;
-  background: ${props => props.theme.colors.slate[100]};
+  background: ${props => props.theme.colors.slate[50]};
+  border: 1px solid ${props => props.theme.colors.slate[100]};
   border-radius: 12px;
-  font-size: 14px;
+  color: ${props => props.theme.colors.slate[600]};
+  font-size: 13px;
   font-weight: 600;
-  color: ${props => props.theme.colors.slate[700]};
+  margin-top: 4px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.theme.colors.slate[200]};
+    background: white;
+    border-color: ${props => props.theme.colors.primary.main};
+    color: ${props => props.theme.colors.primary.main};
+  }
+`;
+
+const IconButton = styled.button`
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid ${props => props.theme.colors.slate[200]};
+  background: white;
+  color: ${props => props.color || props.theme.colors.slate[500]};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${props => props.color ? props.color + '10' : props.theme.colors.slate[50]};
+    border-color: ${props => props.color || props.theme.colors.slate[300]};
   }
 `;
 
 const ModalOverlay = styled(motion.div)`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -273,9 +279,10 @@ const ModalContent = styled(motion.div)`
   background: white;
   border-radius: 28px;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   padding: 40px;
   position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 `;
 
 const ModalHeaderWrapper = styled.div`
@@ -325,6 +332,7 @@ const SubmitBtn = styled(motion.button)`
 
 const Students = () => {
   const toast = useToast();
+  const { t } = useLanguage();
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -338,7 +346,7 @@ const Students = () => {
       const data = await studentsAPI.getAll();
       setStudents(data);
     } catch (error) {
-      toast.error('Error al cargar estudiantes', 'Error');
+      toast.error(t('common.error'), t('common.error'));
     }
   };
 
@@ -368,26 +376,26 @@ const Students = () => {
     try {
       if (editingStudent) {
         await studentsAPI.update(editingStudent.id, formData);
-        toast.success('Estudiante actualizado', 'Éxito');
+        toast.success(t('common.success'), t('common.success'));
       } else {
         await studentsAPI.create(formData);
-        toast.success('Estudiante registrado', 'Éxito');
+        toast.success(t('common.success'), t('common.success'));
       }
       loadStudents();
       setIsModalOpen(false);
     } catch (error) {
-      toast.error('Error al guardar datos', 'Error');
+      toast.error(t('common.error'), t('common.error'));
     }
   };
 
   const handleDelete = async (id, name) => {
-    if (confirm(`¿Eliminar a ${name}?`)) {
+    if (confirm(t('common.confirm'))) {
       try {
         await studentsAPI.delete(id);
-        toast.success('Estudiante eliminado', 'Eliminado');
+        toast.success(t('common.success'), t('common.success'));
         loadStudents();
       } catch (error) {
-        toast.error('No se pudo eliminar', 'Error');
+        toast.error(t('common.error'), t('common.error'));
       }
     }
   };
@@ -398,8 +406,8 @@ const Students = () => {
 
       <PageHeader>
         <HeaderTitle>
-          <h1>Estudiantes</h1>
-          <p>Total de {students.length} alumnos registrados</p>
+          <h1>{t('students.title')}</h1>
+          <p>{t('students.subtitle')}</p>
         </HeaderTitle>
         <ActionButton
           whileHover={{ scale: 1.05 }}
@@ -407,7 +415,7 @@ const Students = () => {
           onClick={() => handleOpenModal()}
         >
           <UserPlus size={20} />
-          Nuevo Estudiante
+          {t('students.newStudent')}
         </ActionButton>
       </PageHeader>
 
@@ -415,12 +423,12 @@ const Students = () => {
         <SearchBox>
           <SearchIconWrapper><Search size={18} /></SearchIconWrapper>
           <SearchInput
-            placeholder="Buscar por nombre, email o matrícula..."
+            placeholder={t('common.search') + "..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </SearchBox>
-        <FilterButton><Filter size={18} /> Filtros</FilterButton>
+        <FilterButton><Filter size={18} /> {t('common.filter')}</FilterButton>
       </TopBar>
 
       <StudentsGrid>
@@ -442,7 +450,7 @@ const Students = () => {
             <StudentInfo>
               <BadgeContainer>
                 {s.matricula && <Badge bg="rgba(99, 102, 241, 0.1)" color="#6366F1">#{s.matricula}</Badge>}
-                <Badge bg="rgba(16, 185, 129, 0.1)" color="#10B981">Activo</Badge>
+                <Badge bg="rgba(16, 185, 129, 0.1)" color="#10B981">{t('students.active')}</Badge>
               </BadgeContainer>
               <h3>{s.name}</h3>
               <p><Mail size={14} /> {s.email}</p>
@@ -450,12 +458,12 @@ const Students = () => {
             </StudentInfo>
 
             <StatsRow>
-              <MiniStat>Inscrito<span>{new Date(s.enrollmentDate).getFullYear()}</span></MiniStat>
-              <MiniStat>Promedio<span>8.5</span></MiniStat>
+              <MiniStat>{t('students.status')}<span>2025</span></MiniStat>
+              <MiniStat>{t('dashboard.averageGrade')}<span>8.5</span></MiniStat>
             </StatsRow>
 
             <ViewProfileBtn>
-              Ver Expediente <ChevronRight size={16} />
+              {t('periods.viewDetails')} <ChevronRight size={16} />
             </ViewProfileBtn>
           </StudentCard>
         ))}
@@ -476,13 +484,13 @@ const Students = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <ModalHeaderWrapper>
-                <h2>{editingStudent ? 'Editar Alumno' : 'Nuevo Alumno'}</h2>
-                <p>Completa la información institucional</p>
+                <h2>{editingStudent ? t('common.edit') : t('students.newStudent')}</h2>
+                <p>{t('students.subtitle')}</p>
               </ModalHeaderWrapper>
 
               <Form onSubmit={handleSubmit}>
                 <FormGroup>
-                  <label>Nombre Completo</label>
+                  <label>{t('students.name')}</label>
                   <Input
                     placeholder="Ej. Juan Manuel Pérez"
                     value={formData.name}
@@ -492,7 +500,7 @@ const Students = () => {
                 </FormGroup>
 
                 <FormGroup>
-                  <label>Correo Electrónico</label>
+                  <label>{t('students.email')}</label>
                   <Input
                     type="email"
                     placeholder="usuario@institucion.edu"
@@ -504,7 +512,7 @@ const Students = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                   <FormGroup>
-                    <label>Teléfono</label>
+                    <label>{t('students.phone')}</label>
                     <Input
                       placeholder="809-000-0000"
                       value={formData.phone}
@@ -526,7 +534,7 @@ const Students = () => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {editingStudent ? 'Guardar Cambios' : 'Registrar Estudiante'}
+                  {t('common.save')}
                 </SubmitBtn>
               </Form>
             </ModalContent>

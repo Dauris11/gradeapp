@@ -152,6 +152,26 @@ const ActionButton = styled(motion.button)`
   cursor: pointer;
 `;
 
+const AddButton = styled(motion.button)`
+  background: ${props => props.theme.colors.gradients.primary};
+  color: white;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+
+  @media (max-width: 640px) {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+`;
+
 const AccumulatedSection = styled.div`
   background: rgba(255, 255, 255, 0.4);
   border-radius: 24px;
@@ -265,8 +285,8 @@ const IconButton = styled(motion.button)`
   width: 32px;
   height: 32px;
   border-radius: 10px;
-  background: ${props => props.bg || '#F1F5F9'};
-  color: ${props => props.color || '#64748B'};
+  background: ${props => props.$bg || '#F1F5F9'};
+  color: ${props => props.$color || '#64748B'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -500,7 +520,7 @@ const GradeManagement = () => {
                                                     <div style={{ fontWeight: '800', color: getGradeColor((g.score / g.maxScore) * 100) }}>
                                                         {g.score}/{g.maxScore}
                                                     </div>
-                                                    <IconButton bg="#FEE2E2" color="#EF4444" onClick={() => handleDeleteGrade(g.id)} whileHover={{ scale: 1.1 }}>
+                                                    <IconButton $bg="#FEE2E2" $color="#EF4444" onClick={() => handleDeleteGrade(g.id)} whileHover={{ scale: 1.1 }}>
                                                         <Trash2 size={14} />
                                                     </IconButton>
                                                 </div>
@@ -522,7 +542,7 @@ const GradeManagement = () => {
                                                     <div style={{ fontWeight: '800', color: getGradeColor((g.score / g.maxScore) * 100) }}>
                                                         {g.score}/{g.maxScore}
                                                     </div>
-                                                    <IconButton bg="#FEE2E2" color="#EF4444" onClick={() => handleDeleteGrade(g.id)} whileHover={{ scale: 1.1 }}>
+                                                    <IconButton $bg="#FEE2E2" $color="#EF4444" onClick={() => handleDeleteGrade(g.id)} whileHover={{ scale: 1.1 }}>
                                                         <Trash2 size={14} />
                                                     </IconButton>
                                                 </div>

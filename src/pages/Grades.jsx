@@ -9,6 +9,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { studentsAPI, subjectsAPI, enrollmentsAPI } from '../services/database';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Container = styled.div`
   display: flex;
@@ -175,7 +176,7 @@ const LetterGrade = styled.span`
   font-weight: ${props => props.theme.typography.fontWeight.bold};
   padding: ${props => props.theme.spacing.xs} ${props => props.theme.spacing.md};
   border-radius: ${props => props.theme.borderRadius.lg};
-  background: ${props => props.bgColor};
+  background: ${props => props.$bgColor};
   color: ${props => props.color};
 `;
 
@@ -185,7 +186,7 @@ const TrendIndicator = styled.div`
   gap: ${props => props.theme.spacing.sm};
   padding: ${props => props.theme.spacing.md};
   border-radius: ${props => props.theme.borderRadius.lg};
-  background: ${props => props.bgColor};
+  background: ${props => props.$bgColor};
   color: ${props => props.color};
   font-size: ${props => props.theme.typography.fontSize.sm};
   font-weight: ${props => props.theme.typography.fontWeight.medium};
@@ -197,7 +198,7 @@ const Badge = styled.div`
   gap: ${props => props.theme.spacing.sm};
   padding: ${props => props.theme.spacing.md};
   border-radius: ${props => props.theme.borderRadius.lg};
-  background: ${props => props.bgColor};
+  background: ${props => props.$bgColor};
   color: ${props => props.color};
   font-size: ${props => props.theme.typography.fontSize.sm};
   font-weight: ${props => props.theme.typography.fontWeight.medium};
@@ -223,6 +224,7 @@ const EmptyState = styled.div`
 `;
 
 const Grades = () => {
+  const { t } = useLanguage();
   const [selectedStudent, setSelectedStudent] = useState('all');
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [students, setStudents] = useState([]);
@@ -278,31 +280,31 @@ const Grades = () => {
   return (
     <Container>
       <div>
-        <Title>Calificaciones</Title>
-        <Subtitle>Gestiona y visualiza las calificaciones de los estudiantes</Subtitle>
+        <Title>{t('grades.title')}</Title>
+        <Subtitle>{t('grades.subtitle')}</Subtitle>
       </div>
 
       <FiltersCard>
         <FiltersGrid>
           <FilterGroup>
-            <Label>Filtrar por Estudiante</Label>
+            <Label>{t('common.filter')} {t('grades.studentName')}</Label>
             <Select
               value={selectedStudent}
               onChange={(e) => setSelectedStudent(e.target.value)}
             >
-              <option value="all">Todos los estudiantes</option>
+              <option value="all">{t('common.all') || 'Todos'}</option>
               {students.map(student => (
                 <option key={student.id} value={student.id}>{student.name}</option>
               ))}
             </Select>
           </FilterGroup>
           <FilterGroup>
-            <Label>Filtrar por Materia</Label>
+            <Label>{t('common.filter')} {t('subjects.title')}</Label>
             <Select
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value)}
             >
-              <option value="all">Todas las materias</option>
+              <option value="all">{t('common.all') || 'Todas'}</option>
               {subjects.map(subject => (
                 <option key={subject.id} value={subject.id}>{subject.name}</option>
               ))}
@@ -325,14 +327,14 @@ const Grades = () => {
                 transition={{ delay: index * 0.05 }}
                 whileHover={{ y: -5 }}
               >
-                <ColorBar gradient={`linear-gradient(to right, ${enrollment.color})`} />
+                <ColorBar gradient={`linear-gradient(to right, ${enrollment.color || '#ccc'})`} />
                 <CardContent>
                   <CardHeader>
                     <StudentInfo>
                       <StudentName>{enrollment.studentName}</StudentName>
                       <SubjectName>{enrollment.subjectName}</SubjectName>
                     </StudentInfo>
-                    <IconWrapper gradient={`linear-gradient(to bottom right, ${enrollment.color})`}>
+                    <IconWrapper gradient={`linear-gradient(to bottom right, ${enrollment.color || '#ccc'})`}>
                       <GraduationCap size={28} />
                     </IconWrapper>
                   </CardHeader>
@@ -340,11 +342,11 @@ const Grades = () => {
                   <GradeSection>
                     <GradeDisplay>
                       <GradeInfo>
-                        <GradeLabel>Calificación</GradeLabel>
+                        <GradeLabel>{t('grades.title')}</GradeLabel>
                         <GradeValues>
                           <GradeNumber>{enrollment.grade}</GradeNumber>
                           <LetterGrade
-                            bgColor={gradeColors.bg}
+                            $bgColor={gradeColors.bg}
                             color={gradeColors.color}
                           >
                             {getLetterGrade(enrollment.grade)}
@@ -354,24 +356,24 @@ const Grades = () => {
                     </GradeDisplay>
 
                     <TrendIndicator
-                      bgColor={improvement > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}
+                      $bgColor={improvement > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)'}
                       color={improvement > 0 ? '#16A34A' : '#DC2626'}
                     >
                       {improvement > 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
-                      {Math.abs(improvement)}% desde el último parcial
+                      {Math.abs(improvement)}%
                     </TrendIndicator>
 
                     {enrollment.grade >= 90 && (
-                      <Badge bgColor="rgba(234, 179, 8, 0.1)" color="#CA8A04">
+                      <Badge $bgColor="rgba(234, 179, 8, 0.1)" color="#CA8A04">
                         <Award size={18} />
-                        Excelente desempeño
+                        {t('common.success')}
                       </Badge>
                     )}
 
                     {enrollment.grade < 70 && (
-                      <Badge bgColor="rgba(239, 68, 68, 0.1)" color="#DC2626">
+                      <Badge $bgColor="rgba(239, 68, 68, 0.1)" color="#DC2626">
                         <AlertCircle size={18} />
-                        Requiere atención
+                        {t('common.warning')}
                       </Badge>
                     )}
                   </GradeSection>
@@ -383,7 +385,7 @@ const Grades = () => {
       ) : (
         <EmptyState>
           <GraduationCap size={48} />
-          <p>No se encontraron calificaciones con los filtros seleccionados</p>
+          <p>{t('common.noData')}</p>
         </EmptyState>
       )}
     </Container>

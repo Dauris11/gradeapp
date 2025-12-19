@@ -298,6 +298,96 @@ export const gradesAPI = {
     }
 };
 
+// ==================== CALENDARIO ====================
+export const calendarAPI = {
+    getAllEvents: async (filters = {}) => {
+        try {
+            const params = new URLSearchParams(filters).toString();
+            const response = await fetch(`${API_URL}/calendar/events?${params}`);
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error en calendarAPI.getAllEvents:', error);
+            return [];
+        }
+    },
+
+    getTodayEvents: async () => {
+        try {
+            const response = await fetch(`${API_URL}/calendar/events/today`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en calendarAPI.getTodayEvents:', error);
+            return [];
+        }
+    },
+
+    createEvent: async (event) => {
+        try {
+            const response = await fetch(`${API_URL}/calendar/events`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(event)
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en calendarAPI.createEvent:', error);
+            throw error;
+        }
+    },
+
+    updateEvent: async (id, updates) => {
+        try {
+            const response = await fetch(`${API_URL}/calendar/events/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en calendarAPI.updateEvent:', error);
+            throw error;
+        }
+    },
+
+    deleteEvent: async (id) => {
+        try {
+            const response = await fetch(`${API_URL}/calendar/events/${id}`, {
+                method: 'DELETE'
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en calendarAPI.deleteEvent:', error);
+            throw error;
+        }
+    }
+};
+
+// ==================== NOTIFICACIONES ====================
+export const notificationsAPI = {
+    getByUser: async (userId) => {
+        try {
+            const response = await fetch(`${API_URL}/calendar/notifications/${userId}`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en notificationsAPI.getByUser:', error);
+            return [];
+        }
+    },
+
+    markAsRead: async (id) => {
+        try {
+            const response = await fetch(`${API_URL}/calendar/notifications/${id}/read`, {
+                method: 'PUT'
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en notificationsAPI.markAsRead:', error);
+            throw error;
+        }
+    }
+};
+
 // Función de inicialización (ya no necesaria, pero la dejamos por compatibilidad)
 export const initDatabase = async () => {
     console.log('✅ Conectado al backend REST en', API_URL);
@@ -310,5 +400,7 @@ export default {
     subjectsAPI,
     enrollmentsAPI,
     gradesAPI,
+    calendarAPI,
+    notificationsAPI,
     initDatabase
 };

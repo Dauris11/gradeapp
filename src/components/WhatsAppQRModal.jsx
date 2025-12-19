@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Wifi, WifiOff, RefreshCw } from 'lucide-react';
+import { X, Wifi, WifiOff, RefreshCw, AlertCircle } from 'lucide-react';
 
 const Modal = styled(motion.div)`
   position: fixed;
@@ -22,6 +22,8 @@ const ModalContent = styled(motion.div)`
   max-width: 480px;
   padding: 40px;
   position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
 `;
 
 const Header = styled.div`
@@ -59,8 +61,8 @@ const StatusBadge = styled.div`
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: ${props => props.connected ? '#ECFDF5' : '#FEF2F2'};
-  color: ${props => props.connected ? '#10B981' : '#EF4444'};
+  background: ${props => props.$connected ? '#ECFDF5' : '#FEF2F2'};
+  color: ${props => props.$connected ? '#10B981' : '#EF4444'};
   border-radius: 14px;
   font-weight: 600;
   font-size: 14px;
@@ -85,6 +87,18 @@ const QRImage = styled.img`
   background: white;
   padding: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const QRText = styled.pre`
+  font-size: 8px;
+  line-height: 1;
+  font-family: monospace;
+  white-space: pre;
+  background: white;
+  padding: 16px;
+  border-radius: 12px;
+  max-width: 280px;
+  overflow: auto;
 `;
 
 const Instructions = styled.div`
@@ -144,8 +158,22 @@ const LoadingSpinner = styled.div`
   }
 `;
 
+const ErrorBox = styled.div`
+  padding: 16px;
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 12px;
+  color: #DC2626;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+`;
+
 const WhatsAppQRModal = ({ isOpen, onClose }) => {
     const [qrCode, setQrCode] = useState(null);
+    const [qrRaw, setQrRaw] = useState(null);
     const [isConnected, setIsConnected] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -154,23 +182,40 @@ const WhatsAppQRModal = ({ isOpen, onClose }) => {
         setIsLoading(true);
         setError(null);
         try {
-            const response = await fetch('http://localhost:3001/api/whatsapp/status');
-            const data = await response.json();
+            // Primero verificar el estado
+            const statusResponse = await fetch('http://localhost:3001/api/whatsapp/status');
+            const statusData = await statusResponse.json();
 
-            if (data.connected) {
+            console.log('WhatsApp Status:', statusData);
+
+            if (statusData.connected) {
                 setIsConnected(true);
                 setQrCode(null);
+                setQrRaw(null);
             } else {
                 setIsConnected(false);
                 // Intentar obtener el QR
                 const qrResponse = await fetch('http://localhost:3001/api/whatsapp/qr');
                 const qrData = await qrResponse.json();
+
+                console.log('QR Data:', qrData);
+
                 if (qrData.qr) {
-                    setQrCode(qrData.qr);
+                    // Si es una imagen base64
+                    if (qrData.qr.startsWith('data:image')) {
+                        setQrCode(qrData.qr);
+                    } else {
+                        // Si es texto plano, guardarlo para mostrar
+                        setQrRaw(qrData.qr);
+                    }
+                } else if (qrData.raw) {
+                    setQrRaw(qrData.raw);
+                } else if (qrData.message) {
+                    setError(qrData.message);
                 }
             }
         } catch (err) {
-            setError('No se pudo conectar con el servidor de WhatsApp');
+            setError(`Error de conexión: ${err.message}`);
             console.error('Error fetching QR:', err);
         } finally {
             setIsLoading(false);
@@ -208,10 +253,22 @@ const WhatsAppQRModal = ({ isOpen, onClose }) => {
                     </CloseButton>
                 </Header>
 
-                <StatusBadge connected={isConnected}>
+                <StatusBadge $connected={isConnected}>
                     {isConnected ? <Wifi size={18} /> : <WifiOff size={18} />}
                     {isConnected ? 'WhatsApp Conectado' : 'WhatsApp Desconectado'}
                 </StatusBadge>
+
+                {error && (
+                    <ErrorBox>
+                        <AlertCircle size={20} style={{ flexShrink: 0, marginTop: 2 }} />
+                        <div>
+                            <strong>Error:</strong><br />
+                            {error}
+                            <br /><br />
+                            <small>Asegúrate de que el backend esté corriendo en puerto 3001</small>
+                        </div>
+                    </ErrorBox>
+                )}
 
                 {isConnected ? (
                     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
@@ -228,16 +285,27 @@ const WhatsAppQRModal = ({ isOpen, onClose }) => {
                         <QRContainer>
                             {isLoading ? (
                                 <LoadingSpinner />
-                            ) : error ? (
-                                <div style={{ padding: '40px', textAlign: 'center', color: '#EF4444' }}>
-                                    <WifiOff size={48} style={{ marginBottom: '16px' }} />
-                                    <p>{error}</p>
-                                </div>
                             ) : qrCode ? (
                                 <QRImage src={qrCode} alt="WhatsApp QR Code" />
+                            ) : qrRaw ? (
+                                <div style={{ textAlign: 'center' }}>
+                                    <p style={{ marginBottom: '12px', color: '#64748b', fontSize: '13px' }}>
+                                        Escanea este código QR con WhatsApp:
+                                    </p>
+                                    <QRText>{qrRaw}</QRText>
+                                    <p style={{ marginTop: '12px', color: '#94a3b8', fontSize: '12px' }}>
+                                        O abre: <a href="http://localhost:3001/api/whatsapp/qr" target="_blank" rel="noopener noreferrer">
+                                            http://localhost:3001/api/whatsapp/qr
+                                        </a>
+                                    </p>
+                                </div>
                             ) : (
                                 <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                                    <p>Generando código QR...</p>
+                                    <WifiOff size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                                    <p>Esperando código QR...</p>
+                                    <small style={{ display: 'block', marginTop: '8px', color: '#94a3b8' }}>
+                                        El QR puede tardar unos segundos en generarse
+                                    </small>
                                 </div>
                             )}
                         </QRContainer>

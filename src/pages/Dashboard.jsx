@@ -21,6 +21,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { studentsAPI, subjectsAPI, enrollmentsAPI } from '../services/database';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Container = styled.div`
   display: flex;
@@ -245,6 +246,7 @@ const ShortcutItem = styled(motion.button)`
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [stats, setStats] = useState({ students: 0, subjects: 0, enrollments: 0, avg: 85 });
 
   useEffect(() => {
@@ -272,10 +274,10 @@ const Dashboard = () => {
   }).format(now);
 
   const statCards = [
-    { title: 'Estudiantes', count: stats.students, icon: Users, color: '#6366F1', bg: 'rgba(99, 102, 241, 0.1)' },
-    { title: 'Materias', count: stats.subjects, icon: BookOpen, color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-    { title: 'Inscripciones', count: stats.enrollments, icon: GraduationCap, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
-    { title: 'Rendimiento', count: stats.avg + '%', icon: TrendingUp, color: '#EC4899', bg: 'rgba(236, 72, 153, 0.1)' },
+    { title: t('dashboard.totalStudents'), count: stats.students, icon: Users, color: '#6366F1', bg: 'rgba(99, 102, 241, 0.1)' },
+    { title: t('dashboard.totalSubjects'), count: stats.subjects, icon: BookOpen, color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
+    { title: t('dashboard.activeEnrollments'), count: stats.enrollments, icon: GraduationCap, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' },
+    { title: t('dashboard.averageGrade'), count: stats.avg + '%', icon: TrendingUp, color: '#EC4899', bg: 'rgba(236, 72, 153, 0.1)' },
   ];
 
   return (
@@ -286,7 +288,7 @@ const Dashboard = () => {
             <Sparkles size={14} />
             {formattedDate.toUpperCase()}
           </div>
-          <h1>Bienvenido de nuevo, Administrador</h1>
+          <h1>{t('dashboard.welcome')}, Administrador</h1>
           <p>Hoy es un gran día para seguir gestionando la excelencia académica de nuestros estudiantes.</p>
         </HeroContent>
         <QuickActionBtn
@@ -295,7 +297,7 @@ const Dashboard = () => {
           onClick={() => navigate('/grade-management')}
         >
           <MousePointer2 size={18} />
-          Subir Calificaciones
+          {t('nav.gradeManagement')}
         </QuickActionBtn>
       </HeroSection>
 
@@ -344,7 +346,7 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader>
-              <h2><Zap size={20} color="#F59E0B" /> Accesos Rápidos</h2>
+              <h2><Zap size={20} color="#F59E0B" /> {t('common.quickAccess') || 'Accesos Rápidos'}</h2>
             </CardHeader>
             <ShortcutGrid>
               <ShortcutItem
@@ -354,7 +356,7 @@ const Dashboard = () => {
               >
                 <div className="icon"><Users size={20} /></div>
                 <div className="text">
-                  <h4>Alumnos</h4>
+                  <h4>{t('nav.students')}</h4>
                   <p>Gestionar registros</p>
                 </div>
                 <ChevronRight size={18} />
@@ -366,7 +368,7 @@ const Dashboard = () => {
               >
                 <div className="icon"><BookOpen size={20} /></div>
                 <div className="text">
-                  <h4>Materias</h4>
+                  <h4>{t('nav.subjects')}</h4>
                   <p>Ver currículo</p>
                 </div>
                 <ChevronRight size={18} />
@@ -378,7 +380,7 @@ const Dashboard = () => {
               >
                 <div className="icon"><FileText size={20} /></div>
                 <div className="text">
-                  <h4>Reportes</h4>
+                  <h4>{t('nav.reports')}</h4>
                   <p>Generar boletines</p>
                 </div>
                 <ChevronRight size={18} />

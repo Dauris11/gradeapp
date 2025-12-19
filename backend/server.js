@@ -3,6 +3,8 @@ const cors = require('cors');
 const { db, initDatabase } = require('./database');
 const whatsappService = require('./whatsappServiceFree');
 const QRCode = require('qrcode');
+const academicPeriodsRoutes = require('./academicPeriodsRoutes');
+const calendarRoutes = require('./calendarRoutes');
 
 const app = express();
 const PORT = 3001;
@@ -16,6 +18,12 @@ initDatabase();
 
 // Inicializar WhatsApp
 whatsappService.initializeWhatsApp();
+
+// Rutas de períodos académicos y registro histórico
+app.use('/api/academic', academicPeriodsRoutes);
+
+// Rutas de calendario y notificaciones
+app.use('/api/calendar', calendarRoutes);
 
 // ==================== RUTAS DE AUTENTICACIÓN ====================
 app.post('/api/auth/login', (req, res) => {
@@ -430,25 +438,11 @@ app.post('/api/email/send-bulk', async (req, res) => {
 
 
 // ==================== RUTAS DE WHATSAPP (GRATIS) ====================
-const whatsappService = require('./whatsappServiceFree');
-
-// Inicializar WhatsApp al arrancar el servidor
-whatsappService.initializeWhatsApp();
 
 // Verificar estado de WhatsApp
 app.get('/api/whatsapp/status', (req, res) => {
     const status = whatsappService.checkStatus();
     res.json(status);
-});
-
-// Obtener código QR para escanear
-app.get('/api/whatsapp/qr', (req, res) => {
-    const qr = whatsappService.getQRCode();
-    if (qr) {
-        res.json({ qr, needsScan: true });
-    } else {
-        res.json({ needsScan: false, message: 'WhatsApp ya está conectado' });
-    }
 });
 
 // Enviar mensaje de WhatsApp individual
@@ -505,13 +499,26 @@ app.get('/api/whatsapp/qr', async (req, res) => {
     try {
         const qrData = whatsappService.getQRCode();
         if (qrData) {
-            // Convertir QR a imagen base64
-            const qrImage = await QRCode.toDataURL(qrData);
-            res.json({ qr: qrImage, raw: qrData });
+            try {
+                // Convertir QR a imagen base64
+                const qrImage = await QRCode.toDataURL(qrData, {
+                    errorCorrectionLevel: 'M',
+                    type: 'image/png',
+                    quality: 0.92,
+                    margin: 1,
+                    width: 300
+                });
+                res.json({ qr: qrImage, raw: qrData });
+            } catch (qrError) {
+                console.error('Error generating QR image:', qrError);
+                // Si falla la generación de imagen, devolver el texto
+                res.json({ qr: null, raw: qrData, error: 'Could not generate QR image' });
+            }
         } else {
             res.json({ qr: null, message: 'WhatsApp ya está conectado o el QR aún no está disponible' });
         }
     } catch (error) {
+        console.error('Error in QR endpoint:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -533,8 +540,20 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
     }
 });
 
+// Servir archivos estáticos del build de React (Producción)
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// Manejar cualquier ruta que no sea API devolviendo el index.html (SPA)
+app.get('*', (req, res) => {
+    // Si la ruta comienza con /api, no interferir (aunque express router debería manejarlo antes)
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Endpoint no encontrado' });
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
 // Iniciar servidor
 app.listen(PORT, () => {
     console.log(`🚀 Backend corriendo en http://localhost:${PORT}`);
     console.log(`📊 Base de datos: ${__dirname}/grade_manager.db`);
+    console.log(`🌐 Web en producción disponible en: http://localhost:${PORT}`);
 });

@@ -16,10 +16,15 @@ import {
   UserCog,
   Bell,
   Settings,
-  MessageCircle
+  MessageCircle,
+  CalendarDays,
+  History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WhatsAppQRModal from './WhatsAppQRModal';
+import SettingsModal from './SettingsModal';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const Container = styled.div`
   display: flex;
@@ -31,10 +36,10 @@ const Container = styled.div`
 
 const Sidebar = styled(motion.div)`
   width: 280px;
-  background: white;
+  background: ${props => props.theme.colors.surface};
   display: flex;
   flex-direction: column;
-  border-right: 1px solid ${props => props.theme.colors.slate[200]};
+  border-right: 1px solid ${props => props.theme.colors.border};
   z-index: 40;
   position: relative;
 
@@ -216,8 +221,8 @@ const MainContent = styled.div`
 
 const Navbar = styled.header`
   height: 64px;
-  background: white;
-  border-bottom: 1px solid ${props => props.theme.colors.slate[200]};
+  background: ${props => props.theme.colors.surface};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -321,10 +326,10 @@ const NotificationPanel = styled(motion.div)`
   top: 70px;
   right: 24px;
   width: 360px;
-  background: white;
+  background: ${props => props.theme.colors.surface};
   border-radius: 16px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  border: 1px solid ${props => props.theme.colors.slate[200]};
+  box-shadow: ${props => props.theme.shadows.xl};
+  border: 1px solid ${props => props.theme.colors.border};
   z-index: 100;
   max-height: 400px;
   overflow-y: auto;
@@ -332,20 +337,22 @@ const NotificationPanel = styled(motion.div)`
 
 const NotificationHeader = styled.div`
   padding: 16px 20px;
-  border-bottom: 1px solid ${props => props.theme.colors.slate[100]};
+  border-bottom: 1px solid ${props => props.theme.colors.border};
   font-weight: 700;
   font-size: 15px;
-  color: ${props => props.theme.colors.slate[900]};
+  color: ${props => props.theme.colors.text.primary};
 `;
 
 const NotificationItem = styled.div`
   padding: 16px 20px;
-  border-bottom: 1px solid ${props => props.theme.colors.slate[50]};
+  border-bottom: 1px solid ${props => props.theme.colors.slate[100]};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    background: ${props => props.theme.colors.slate[50]};
+    background: ${props => props.theme.mode === 'dark'
+    ? props.theme.colors.slate[100]
+    : props.theme.colors.slate[50]};
   }
 
   &:last-child {
@@ -356,22 +363,27 @@ const NotificationItem = styled.div`
 const NotificationTitle = styled.p`
   font-size: 13px;
   font-weight: 600;
-  color: ${props => props.theme.colors.slate[900]};
+  color: ${props => props.theme.colors.text.primary};
   margin-bottom: 4px;
 `;
 
 const NotificationText = styled.p`
   font-size: 12px;
-  color: ${props => props.theme.colors.slate[500]};
+  color: ${props => props.theme.colors.text.secondary};
 `;
+
+
 
 const Layout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout, hasPermission } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showWhatsAppQR, setShowWhatsAppQR] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleResize = () => {
@@ -408,22 +420,33 @@ const Layout = () => {
 
   const navItems = [
     {
-      label: 'Principal', items: [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: Users, label: 'Estudiantes', path: '/students' },
-        { icon: BookOpen, label: 'Materias', path: '/subjects' },
+      label: t('nav.main') || 'Principal', items: [
+        { icon: LayoutDashboard, label: t('nav.dashboard'), path: '/dashboard' },
+        { icon: Users, label: t('nav.students'), path: '/students' },
+        { icon: BookOpen, label: t('nav.subjects'), path: '/subjects' },
       ]
     },
     {
-      label: 'Académico', items: [
-        { icon: UserCheck, label: 'Inscripciones', path: '/enrollments' },
-        { icon: Edit, label: 'Gestión de Notas', path: '/grade-management' },
+      label: t('nav.academic') || 'Académico', items: [
+        { icon: UserCheck, label: t('nav.enrollments'), path: '/enrollments' },
+        { icon: Edit, label: t('nav.gradeManagement'), path: '/grade-management' },
       ]
     },
     {
-      label: 'Sistema', items: [
-        { icon: FileText, label: 'Reportes', path: '/reports' },
-        { icon: UserCog, label: 'Usuarios', path: '/users' },
+      label: t('periods.title') || 'Registro Histórico', items: [
+        { icon: CalendarDays, label: t('nav.academicPeriods'), path: '/academic-periods' },
+        { icon: History, label: t('nav.studentHistory'), path: '/student-history' },
+      ]
+    },
+    {
+      label: t('nav.system') || 'Sistema', items: [
+        { icon: FileText, label: t('nav.reports'), path: '/reports' },
+        { icon: UserCog, label: t('nav.users'), path: '/users' },
+      ]
+    },
+    {
+      label: t('nav.communication') || 'Comunicación', items: [
+        { icon: Calendar, label: t('nav.calendar'), path: '/calendar' },
       ]
     }
   ];
@@ -489,13 +512,13 @@ const Layout = () => {
 
             <SidebarFooter>
               <UserProfile>
-                <Avatar>AD</Avatar>
+                <Avatar>{user?.fullName?.charAt(0) || user?.username?.charAt(0) || 'U'}</Avatar>
                 <UserInfo>
-                  <UserName>Administrador</UserName>
-                  <UserRole>Admin Principal</UserRole>
+                  <UserName>{user?.fullName || user?.username || 'Usuario'}</UserName>
+                  <UserRole>{user?.role === 'admin' ? 'Administrador' : user?.role === 'teacher' ? 'Profesor' : 'Usuario'}</UserRole>
                 </UserInfo>
               </UserProfile>
-              <LogoutButton onClick={() => navigate('/')}>
+              <LogoutButton onClick={logout}>
                 <LogOut size={16} />
                 <span>Cerrar Sesión</span>
               </LogoutButton>
@@ -521,7 +544,7 @@ const Layout = () => {
               <Bell size={20} />
               <Badge />
             </IconButton>
-            <IconButton onClick={() => navigate('/users')} title="Configuración">
+            <IconButton onClick={() => setShowSettings(true)} title="Configuración">
               <Settings size={20} />
             </IconButton>
           </NavRight>
@@ -563,6 +586,11 @@ const Layout = () => {
       <WhatsAppQRModal
         isOpen={showWhatsAppQR}
         onClose={() => setShowWhatsAppQR(false)}
+      />
+
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
       />
     </Container>
   );
