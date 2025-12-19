@@ -559,8 +559,10 @@ function startServer(port = 3001) {
     initDatabase();
     
     // Inicializar WhatsApp con ruta configurada (si existe env)
-    const whatsappSessionPath = process.env.WHATSAPP_SESSION_PATH;
-    whatsappService.initializeWhatsApp(whatsappSessionPath);
+    // DESACTIVADO EN PROD: Usamos redirección Web en Frontend para evitar crash de Puppeteer
+    // const whatsappSessionPath = process.env.WHATSAPP_SESSION_PATH;
+    // whatsappService.initializeWhatsApp(whatsappSessionPath);
+    console.log('⚠️ WhatsApp Backend desactivado (Modo Web Frontend)');
 
     // Iniciar servidor
     serverInstance = app.listen(port, () => {
