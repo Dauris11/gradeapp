@@ -1,6 +1,28 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, dialog } = require('electron');
 const path = require('path');
 const { fork } = require('child_process');
+const { autoUpdater } = require('electron-updater');
+
+// Configurar AutoUpdater
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = true;
+
+autoUpdater.on('update-available', () => {
+    // Opcional: Notificar visualmente si lo desearas, por ahora log
+    console.log('📦 Nueva actualización disponible. Descargando...');
+});
+
+autoUpdater.on('update-downloaded', () => {
+    console.log('✅ Actualización descargada. Se instalará al cerrar.');
+    // Opcional: Preguntar al usuario si quiere reiniciar ya
+    dialog.showMessageBox({
+        type: 'info',
+        title: 'Actualización Lista',
+        message: 'Una nueva versión se ha descargado. Se instalará automáticamente al cerrar la aplicación.',
+        buttons: ['Entendido']
+    });
+});
+
 
 let mainWindow;
 let splashWindow;
@@ -153,6 +175,11 @@ app.whenReady().then(() => {
   createSplashWindow();
   // Pequeño delay para iniciar la carga de la main window después de mostrar el splash
   setTimeout(createWindow, 500);
+
+  // Buscar actualizaciones si es producción
+  if (app.isPackaged) {
+      autoUpdater.checkForUpdatesAndNotify();
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

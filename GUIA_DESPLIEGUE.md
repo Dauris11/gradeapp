@@ -169,3 +169,25 @@ Si usas VPS (Opción B):
 *   **Node.js (Express)** -> Sirve el Frontend (React) y la API.
 *   **SQLite** -> Guarda los datos en el disco del servidor.
 *   **WhatsApp Lib** -> Ejecuta un Chrome oculto en el servidor para enviar mensajes.
+
+---
+
+## 🔄 Ciclo de Actualizaciones (Desktop / Electron)
+
+Para actualizar la aplicación de escritorio instalada en Windows sin perder datos:
+
+### 1. Incrementar Versión
+Abre `package.json` y cambia el version number (ej: `"version": "0.0.1"`).
+
+### 2. Generar Nuevo Instalador
+Ejecuta:
+```bash
+npm run electron:build
+```
+
+### 3. Distribución
+Envia el nuevo archivo `.exe` al usuario. Al instalarlo, detectará la instalación previa y la actualizará manteniendo la base de datos intacta.
+
+### 🚀 Actualizaciones Automáticas (Opcional)
+Es posible configurar `electron-updater` para que la app busque nuevas versiones en GitHub Releases y se actualice sola.
+
