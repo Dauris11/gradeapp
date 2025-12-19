@@ -10,17 +10,18 @@ let qrCodeData = null;
 /**
  * Inicializar cliente de WhatsApp Web
  */
-const initializeWhatsApp = () => {
+const initializeWhatsApp = (sessionPath) => {
     if (whatsappClient) {
         console.log('✅ Cliente de WhatsApp ya inicializado');
         return;
     }
 
     console.log('🔄 Inicializando WhatsApp Web...');
+    console.log('📂 Ruta de sesión:', sessionPath || './whatsapp-session');
 
     whatsappClient = new Client({
         authStrategy: new LocalAuth({
-            dataPath: './whatsapp-session'
+            dataPath: sessionPath || './whatsapp-session'
         }),
         puppeteer: {
             headless: true,

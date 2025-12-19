@@ -26,63 +26,36 @@ autoUpdater.on('update-downloaded', () => {
 
 let mainWindow;
 let splashWindow;
-let serverProcess;
+const userDataPath = app.getPath('userData');
+const dbPath = path.join(userDataPath, 'grade_manager.db');
+const whatsappSessionPath = path.join(userDataPath, 'whatsapp-session');
+
+// Configurar variables de entorno para el backend
+process.env.DB_PATH_CUSTOM = dbPath;
+process.env.WHATSAPP_SESSION_PATH = whatsappSessionPath;
+
+let backendServer;
+try {
+    // Importar backend directamente (se ejecuta en el proceso principal)
+    // Esto asegura que compartan node_modules y evita problemas de rutas/forks
+    backendServer = require('../backend/server.js');
+} catch (err) {
+    console.error('❌ Error fatal cargando módulo de backend:', err);
+}
 
 function startServer() {
-  const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-  let backendPath;
-  
-  // Ruta donde se guardarán los datos del usuario (persistencia)
-  const userDataPath = app.getPath('userData');
-  const dbPath = path.join(userDataPath, 'grade_manager.db');
-
-  if (isDev) {
-    backendPath = path.join(__dirname, '../backend/server.js');
-  } else {
-    // En producción, asumimos que la carpeta 'backend' se copió a 'resources'
-    backendPath = path.join(process.resourcesPath, 'app.asar.unpacked', 'backend', 'server.js');
-    // Fallback por si no está unpacked
-    if (!require('fs').existsSync(backendPath)) {
-        backendPath = path.join(process.resourcesPath, 'backend', 'server.js');
+    if (backendServer) {
+        console.log('🚀 Iniciando servidor backend (integrado)...');
+        // El puerto puede ser 3001
+        backendServer.startServer(3001);
     }
-  }
-
-  console.log('🚀 Iniciando servidor backend...');
-  console.log('📍 Script:', backendPath);
-  console.log('💾 DB:', dbPath);
-
-  try {
-    // Iniciar servidor como proceso hijo
-    // ELECTRON_RUN_AS_NODE asegura que use el binario de Node interno de Electron
-    serverProcess = fork(backendPath, [], {
-      env: {
-        ...process.env,
-        DB_PATH_CUSTOM: dbPath,
-        ELECTRON_RUN_AS_NODE: 1,
-        PORT: 3001
-      },
-      stdio: ['pipe', 'pipe', 'pipe', 'ipc']
-    });
-
-    serverProcess.stdout.on('data', (data) => {
-      console.log(`[Backend]: ${data}`);
-    });
-
-    serverProcess.stderr.on('data', (data) => {
-      console.error(`[Backend Error]: ${data}`);
-    });
-
-  } catch (err) {
-    console.error('❌ Error fatal iniciando backend:', err);
-  }
 }
 
 function stopServer() {
-  if (serverProcess) {
-    console.log('🛑 Deteniendo servidor backend...');
-    serverProcess.kill();
-    serverProcess = null;
-  }
+    if (backendServer) {
+        console.log('🛑 Deteniendo servidor backend...');
+        backendServer.stopServer();
+    }
 }
 
 function createSplashWindow() {

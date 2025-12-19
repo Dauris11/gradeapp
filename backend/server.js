@@ -14,10 +14,9 @@ app.use(cors());
 app.use(express.json());
 
 // Inicializar base de datos
-initDatabase();
-
-// Inicializar WhatsApp
-whatsappService.initializeWhatsApp();
+// Inicialización diferida
+// initDatabase se llamará en startServer
+// whatsappService.initializeWhatsApp se llamará en startServer
 
 // Rutas de períodos académicos y registro histórico
 app.use('/api/academic', academicPeriodsRoutes);
@@ -551,9 +550,39 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Backend corriendo en http://localhost:${PORT}`);
-    console.log(`📊 Base de datos: ${__dirname}/grade_manager.db`);
-    console.log(`🌐 Web en producción disponible en: http://localhost:${PORT}`);
-});
+let serverInstance;
+
+function startServer(port = 3001) {
+    if (serverInstance) return serverInstance;
+
+    // Asegurar que la DB esté inicializada (idempotente)
+    initDatabase();
+    
+    // Inicializar WhatsApp con ruta configurada (si existe env)
+    const whatsappSessionPath = process.env.WHATSAPP_SESSION_PATH;
+    whatsappService.initializeWhatsApp(whatsappSessionPath);
+
+    // Iniciar servidor
+    serverInstance = app.listen(port, () => {
+        console.log(`🚀 Backend corriendo en http://localhost:${port}`);
+        console.log(`📊 Base de datos: ${process.env.DB_PATH_CUSTOM || 'default'}`);
+        console.log(`🌐 Web en producción disponible en: http://localhost:${port}`);
+    });
+    
+    return serverInstance;
+}
+
+function stopServer() {
+    if (serverInstance) {
+        serverInstance.close();
+        serverInstance = null;
+        console.log('🛑 Servidor detenido');
+    }
+}
+
+// Si se ejecuta directamente (node server.js)
+if (require.main === module) {
+    startServer(PORT);
+}
+
+module.exports = { app, startServer, stopServer };
