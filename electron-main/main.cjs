@@ -1,4 +1,6 @@
-const { ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 let splashWindow;
@@ -112,6 +114,39 @@ ipcMain.on('close_update_window', () => {
 });
 
 // ---------------------------------------------------------------------------
+
+const userDataPath = app.getPath('userData');
+const dbPath = path.join(userDataPath, 'grade_manager.db');
+const whatsappSessionPath = path.join(userDataPath, 'whatsapp-session');
+
+// Configurar variables de entorno para el backend
+process.env.DB_PATH_CUSTOM = dbPath;
+process.env.WHATSAPP_SESSION_PATH = whatsappSessionPath;
+
+let backendServer;
+try {
+    // Importar backend directamente (se ejecuta en el proceso principal)
+    // Esto asegura que compartan node_modules y evita problemas de rutas/forks
+    backendServer = require('../backend/server.js');
+} catch (err) {
+    console.error('❌ Error fatal cargando módulo de backend:', err);
+}
+
+function startServer() {
+    if (backendServer) {
+        console.log('🚀 Iniciando servidor backend (integrado)...');
+        // El puerto puede ser 3001
+        try {
+             backendServer.startServer(3001);
+        } catch(e) { console.error('Error starting server', e); }
+    }
+}
+
+function stopServer() {
+    if (backendServer && backendServer.stopServer) {
+        backendServer.stopServer();
+    }
+}
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
