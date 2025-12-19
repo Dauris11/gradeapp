@@ -1,7 +1,7 @@
 {
   "name": "grade-manager",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "electron-main/main.cjs",
   "repository": {
@@ -74,7 +74,8 @@
     "win": {
       "target": "nsis",
       "icon": "public/imagenes/logo-principal.ico",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "artifactName": "${name}-Setup-${version}.${ext}"
     },
     "nsis": {
       "oneClick": false,
