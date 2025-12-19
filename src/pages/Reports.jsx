@@ -364,7 +364,10 @@ const Reports = () => {
     try {
       setSendingWhatsApp(prev => ({ ...prev, [student.id]: true }));
 
-      const message = WhatsAppService.generateReportMessage(student);
+      const studentEnrollments = enrollments.filter(e => e.studentId === student.id);
+      const studentGrades = grades.filter(g => studentEnrollments.some(e => e.id === g.enrollmentId));
+
+      const message = WhatsAppService.generateReportMessage(student, studentEnrollments, studentGrades);
       await WhatsAppService.sendMessage(phone, message);
 
       toast.success(`WhatsApp: ${t('common.success')}`, t('common.success'));
@@ -429,9 +432,16 @@ const Reports = () => {
     if (selectedStudents.length === 0) return toast.warning(t('common.noData'));
     setIsProcessing(true); setShowProgress(true); setProgress([]);
     const selected = students.filter(s => selectedStudents.includes(s.id));
-    const messages = selected.filter(s => s.phone).map(s => ({
-      to: s.phone, message: WhatsAppService.generateReportMessage(s), student: s.name
-    }));
+    const messages = selected.filter(s => s.phone).map(s => {
+      const studentEnrollments = enrollments.filter(e => e.studentId === s.id);
+      const studentGrades = grades.filter(g => studentEnrollments.some(e => e.id === g.enrollmentId));
+
+      return {
+        to: s.phone,
+        message: WhatsAppService.generateReportMessage(s, studentEnrollments, studentGrades),
+        student: s.name
+      };
+    });
     await WhatsAppService.sendBulkMessages(messages, (pData) => {
       setProgress(prev => {
         const existing = prev.find(x => x.name === pData.student);

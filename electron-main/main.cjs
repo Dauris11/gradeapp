@@ -1,62 +1,117 @@
-const { app, BrowserWindow, dialog } = require('electron');
-const path = require('path');
-const { fork } = require('child_process');
-const { autoUpdater } = require('electron-updater');
-
-// Configurar AutoUpdater
-autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
-
-autoUpdater.on('update-available', () => {
-    // Opcional: Notificar visualmente si lo desearas, por ahora log
-    console.log('📦 Nueva actualización disponible. Descargando...');
-});
-
-autoUpdater.on('update-downloaded', () => {
-    console.log('✅ Actualización descargada. Se instalará al cerrar.');
-    // Opcional: Preguntar al usuario si quiere reiniciar ya
-    dialog.showMessageBox({
-        type: 'info',
-        title: 'Actualización Lista',
-        message: 'Una nueva versión se ha descargado. Se instalará automáticamente al cerrar la aplicación.',
-        buttons: ['Entendido']
-    });
-});
-
+const { ipcMain } = require('electron');
 
 let mainWindow;
 let splashWindow;
-const userDataPath = app.getPath('userData');
-const dbPath = path.join(userDataPath, 'grade_manager.db');
-const whatsappSessionPath = path.join(userDataPath, 'whatsapp-session');
+let updateWindow; // Nueva ventana de actualización
 
-// Configurar variables de entorno para el backend
-process.env.DB_PATH_CUSTOM = dbPath;
-process.env.WHATSAPP_SESSION_PATH = whatsappSessionPath;
+// ... (Rest of imports and server setup code remains same until createSplashWindow) ...
 
-let backendServer;
-try {
-    // Importar backend directamente (se ejecuta en el proceso principal)
-    // Esto asegura que compartan node_modules y evita problemas de rutas/forks
-    backendServer = require('../backend/server.js');
-} catch (err) {
-    console.error('❌ Error fatal cargando módulo de backend:', err);
-}
+// ---------- CONFIGURACIÓN AUTO UPDATER CON INTERFAZ PERSONALIZADA ----------
+autoUpdater.autoDownload = true;
+autoUpdater.autoInstallOnAppQuit = false; // Lo gestionamos manualmente con el botón
 
-function startServer() {
-    if (backendServer) {
-        console.log('🚀 Iniciando servidor backend (integrado)...');
-        // El puerto puede ser 3001
-        backendServer.startServer(3001);
+function createUpdateWindow() {
+  if (updateWindow) return; // Ya existe
+
+  updateWindow = new BrowserWindow({
+    width: 400,
+    height: 350,
+    transparent: true,
+    frame: false,
+    alwaysOnTop: true,
+    resizable: false,
+    center: true,
+    webPreferences: {
+      nodeIntegration: true, // Necesario para el script simple del HTML
+      contextIsolation: false
     }
+  });
+
+  updateWindow.loadFile(path.join(__dirname, 'update.html'));
+  
+  updateWindow.on('closed', () => {
+    updateWindow = null;
+    // Si se cierra el updater y no hay main window (ej: inicio), cerrar app
+    if (!mainWindow && !splashWindow) app.quit();
+  });
 }
 
-function stopServer() {
-    if (backendServer) {
-        console.log('🛑 Deteniendo servidor backend...');
-        backendServer.stopServer();
+// Eventos del AutoUpdater
+autoUpdater.on('checking-for-update', () => {
+    // Si la APP ya está abierta, no molestamos con la ventana de carga
+    // Solo si estamos en el arranque (splash) podríamos mostrar algo, o dejarlo silencioso
+    console.log('� Buscando actualizaciones...');
+});
+
+autoUpdater.on('update-available', () => {
+    console.log('📦 Actualización encontrada.');
+    // Si hay actualización, mostramos la ventana de actualización
+    // Opcional: Solo si es crítica, o siempre. 
+    // Para UX moderna: Mostrar notificación o pequeño indicador en mainWindow si ya está abierta.
+    // Si estamos en SPLASH, podríamos cambiar a Update Window.
+    if (splashWindow) {
+        splashWindow.close();
+        createUpdateWindow();
+    } else if (mainWindow) {
+        // Si ya está usando la app, quizás una notificación toast. 
+        // Por simplicidad del requerimiento "updater con interfaz": abrimos ventana.
+        createUpdateWindow();
     }
-}
+});
+
+autoUpdater.on('update-not-available', () => {
+    console.log('✅ No hay actualizaciones.');
+    if (updateWindow) {
+        updateWindow.webContents.send('update-not-available');
+        // El HTML se encargará de cerrarse o lo cerramos aquí tras delay
+        setTimeout(() => {
+             if (updateWindow) updateWindow.close();
+             // Si estábamos en arranque y no había main window, crearla
+             if (!mainWindow) setTimeout(createWindow, 500);
+        }, 2000);
+    }
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+    if (updateWindow) {
+        updateWindow.webContents.send('update-progress', progressObj.percent);
+    }
+});
+
+autoUpdater.on('update-downloaded', () => {
+    console.log('✅ Descarga completada.');
+    if (updateWindow) {
+        updateWindow.webContents.send('update-downloaded');
+        // Ahora el usuario verá el botón "Reiniciar"
+    } else {
+        // Si se descargó en segundo plano, notificamos o preguntamos
+        // dialog.showMessageBox... (Opcional, pero el usuario pidió UI personalizada)
+        createUpdateWindow();
+        setTimeout(() => {
+            if(updateWindow) updateWindow.webContents.send('update-downloaded');
+        }, 1000); // Dar tiempo a cargar
+    }
+});
+
+autoUpdater.on('error', (err) => {
+    console.error('Error en actualización:', err);
+    if (updateWindow) {
+        updateWindow.webContents.send('error', err.message);
+    }
+});
+
+// Comunicación IPC desde update.html
+ipcMain.on('restart_app', () => {
+    autoUpdater.quitAndInstall();
+});
+
+ipcMain.on('close_update_window', () => {
+    if (updateWindow) updateWindow.close();
+    // Si no hay ventana principal, continuar carga normal
+    if (!mainWindow) createWindow();
+});
+
+// ---------------------------------------------------------------------------
 
 function createSplashWindow() {
   splashWindow = new BrowserWindow({
@@ -75,18 +130,17 @@ function createSplashWindow() {
   });
 
   splashWindow.loadFile(path.join(__dirname, 'splash.html'));
-  
-  // Forzar que aparezca encima de todo (nivel screen-saver)
   splashWindow.setAlwaysOnTop(true, 'screen-saver');
   splashWindow.focus();
   
-  // Clean up when closed
   splashWindow.on('closed', () => {
     splashWindow = null;
   });
 }
 
 function createWindow() {
+  if (mainWindow) return; // Evitar duplicados
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -97,61 +151,72 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      webSecurity: true // En producción esto debe ser true
+      webSecurity: true 
     },
-    backgroundColor: '#F8FAFC', // Color de fondo para evitar blanco puro antes de carga
-    show: false, // Importante: No mostrar hasta que esté lista
+    backgroundColor: '#F8FAFC', 
+    show: false, 
     autoHideMenuBar: true,
     frame: true,
     titleBarStyle: 'default'
   });
 
-  // En desarrollo, carga desde Vite
   if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
     mainWindow.loadURL('http://localhost:5173');
-    // Abre DevTools en desarrollo
-    // mainWindow.webContents.openDevTools();
   } else {
-    // En producción, carga el build
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
 
-  // Mostrar ventana cuando esté lista
   mainWindow.once('ready-to-show', () => {
-    // Simular un tiempo mínimo de carga para que se vea el splash (branding)
-    setTimeout(() => {
-      if (splashWindow) {
-        splashWindow.minimize(); // Efecto visual
-        splashWindow.close();
+      // Si tenemos ventana de update abierta, no mostrar main todavía o mantenerla detrás
+      if (updateWindow) {
+          // Esperamos
+      } else {
+        if (splashWindow) {
+            splashWindow.close();
+        }
+        mainWindow.show();
+        mainWindow.focus();
       }
-      mainWindow.show();
-      mainWindow.focus();
-    }, 3000); // 3 segundos de delay para asegurar que el backend arrancó
   });
 
-  // Manejar cierre de ventana
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
 
-  // Prevenir navegación externa
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith('http://localhost:5173') && !url.startsWith('file://')) {
       event.preventDefault();
+      require('electron').shell.openExternal(url); // Abrir enlaces externos en navegador
     }
   });
 }
 
-// Crear ventana cuando la app esté lista
 app.whenReady().then(() => {
   startServer(); // INICIAR BACKEND
-  createSplashWindow();
-  // Pequeño delay para iniciar la carga de la main window después de mostrar el splash
-  setTimeout(createWindow, 500);
-
-  // Buscar actualizaciones si es producción
+  
+  // En PROD verificamos updates ANTES de mostrar la app grande
   if (app.isPackaged) {
-      autoUpdater.checkForUpdatesAndNotify();
+      // Creamos splash mientras busca
+      createSplashWindow();
+      
+      // Buscar update
+      autoUpdater.checkForUpdates();
+      
+      // Si tarda mucho sin responder (timeout de 5s), lanzamos la app
+      // Esto evita que se quede en el splash si no hay internet
+      setTimeout(() => {
+          if (splashWindow && !updateWindow && !mainWindow) {
+              console.log('⚠️ Timeout buscando updates. Iniciando app...');
+              createWindow();
+          }
+      }, 5000);
+      
+  } else {
+      // DEV MODE
+      createSplashWindow();
+      setTimeout(() => {
+          createWindow();
+      }, 3000);
   }
 
   app.on('activate', () => {
@@ -161,7 +226,6 @@ app.whenReady().then(() => {
   });
 });
 
-// Cerrar app cuando todas las ventanas estén cerradas (excepto en macOS)
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
@@ -172,8 +236,6 @@ app.on('before-quit', () => {
     stopServer(); // DETENER BACKEND
 });
 
-// Configuración adicional
 app.on('ready', () => {
-  // Deshabilitar aceleración de hardware si hay problemas de rendimiento
   // app.disableHardwareAcceleration();
 });

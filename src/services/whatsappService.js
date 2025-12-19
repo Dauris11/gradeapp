@@ -1,144 +1,120 @@
-// Servicio de WhatsApp para el frontend
-// Integración con Twilio WhatsApp API
-
-export const WhatsAppService = {
+const WhatsAppService = {
     /**
-     * Verificar estado de WhatsApp
-     * @returns {Promise<Object>} Estado
+     * Verificar estado de WhatsApp (Mock para compatibilidad)
      */
     checkStatus: async () => {
-        try {
-            const response = await fetch('http://localhost:3001/api/whatsapp/status');
-            return await response.json();
-        } catch (error) {
-            return {
-                ready: false,
-                message: 'Error al verificar estado'
-            };
-        }
+        return {
+            ready: true,
+            message: 'Modo Web Directo'
+        };
     },
 
     /**
-     * Obtener código QR para escanear
-     * @returns {Promise<Object>} QR Code
+     * Obtener código QR (Mock para compatibilidad)
      */
     getQRCode: async () => {
-        try {
-            const response = await fetch('http://localhost:3001/api/whatsapp/qr');
-            return await response.json();
-        } catch (error) {
-            return {
-                needsScan: false,
-                message: 'Error al obtener QR'
-            };
-        }
+        return {
+            needsScan: false,
+            message: 'No requerido'
+        };
     },
 
     /**
-     * Enviar mensaje de WhatsApp
-     * @param {string} to - Número de teléfono (formato: 18091234567 sin +)
-     * @param {string} message - Mensaje de texto
-     * @returns {Promise} Resultado del envío
+     * Enviar mensaje de WhatsApp (Redirección a Web)
      */
     sendMessage: async (to, message) => {
-        try {
-            console.log('📱 Enviando WhatsApp a:', to);
-            
-            // Limpiar número (quitar + y espacios)
-            const cleanPhone = to.replace(/[+\s-]/g, '');
-            
-            const response = await fetch('http://localhost:3001/api/whatsapp/send', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    to: cleanPhone,
-                    message
-                })
-            });
+        return new Promise((resolve, reject) => {
+            try {
+                console.log('📱 Abriendo WhatsApp Web para:', to);
+                
+                // Limpiar número
+                const cleanPhone = to.replace(/[+\s-]/g, '');
+                
+                // Codificar mensaje para URL
+                const encodedMessage = encodeURIComponent(message);
+                
+                // Crear URL de WhatsApp Web
+                const url = `https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMessage}`;
+                
+                // Abrir en nueva pestaña
+                const newWindow = window.open(url, '_blank');
+                
+                // Si el navegador bloqueó el popup
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    throw new Error('El navegador bloqueó la ventana emergente de WhatsApp');
+                }
 
-            const result = await response.json();
-            
-            if (result.success) {
-                console.log('✅ WhatsApp enviado exitosamente');
-                return result;
-            } else {
-                console.error('❌ Error al enviar WhatsApp:', result.error);
-                throw new Error(result.error || 'Error al enviar WhatsApp');
+                resolve({ success: true, message: 'WhatsApp Web abierto' });
+            } catch (error) {
+                console.error('❌ Error al abrir WhatsApp:', error);
+                reject(error);
             }
-        } catch (error) {
-            console.error('❌ Error al enviar WhatsApp:', error);
-            throw error;
-        }
+        });
     },
 
     /**
-     * Generar mensaje de reporte para WhatsApp
-     * @param {Object} student - Datos del estudiante
-     * @param {string} pdfUrl - URL del PDF (opcional)
-     * @returns {string} Mensaje formateado
+     * Generar mensaje de reporte con calificaciones
      */
-    generateReportMessage: (student, pdfUrl = null) => {
+    generateReportMessage: (student, enrollments = [], grades = []) => {
         const currentDate = new Date().toLocaleDateString('es-ES', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
             day: 'numeric'
         });
 
-        let message = `
+        // Construir resumen de calificaciones
+        let gradesSummary = '';
+        
+        if (enrollments.length > 0 && grades.length > 0) {
+            gradesSummary = '\n📋 *Resumen de Calificaciones:*\n';
+            
+            enrollments.forEach(enrollment => {
+                const subjectGrades = grades.filter(g => g.enrollmentId === enrollment.id);
+                if (subjectGrades.length > 0) {
+                    gradesSummary += `\n📘 *${enrollment.subjectName}*:`;
+                    
+                    // Agrupar por componente (Tareas, Exámenes)
+                    const components = {};
+                    subjectGrades.forEach(g => {
+                        if (!components[g.componentName]) components[g.componentName] = 0;
+                        components[g.componentName] += g.score;
+                    });
+
+                    // Listar puntajes (esto es un ejemplo simple, se podría mejorar la lógica de promedio)
+                    // Si el sistema guarda el score real de cada entrega, tal vez queramos mostrar el total acumulado
+                    // O el acumulado calculado en enrollment.accumulated si viniera pre-calculado
+                    
+                    if (enrollment.accumulated !== undefined && enrollment.accumulated !== null) {
+                         gradesSummary += ` ${enrollment.accumulated} pts`;
+                    } else {
+                        // Fallback: mostrar detalles
+                        subjectGrades.forEach(g => {
+                            gradesSummary += `\n   - ${g.name}: ${g.score}/${g.maxScore}`;
+                        });
+                    }
+                }
+            });
+            gradesSummary += '\n';
+        }
+
+        return `
 🎓 *GradeApp - Reporte Académico*
 
 ¡Hola ${student.name}! 👋
 
-Te enviamos tu reporte académico actualizado correspondiente a ${currentDate}.
+Te envío tu reporte de calificaciones al día ${currentDate}.
+${gradesSummary}
+💡 *Recuerda:* Tu dedicación es clave para el éxito. ¡Sigue adelante!
 
-📊 *Tu reporte incluye:*
-• Calificaciones detalladas por materia
-• Promedio de asignaciones y exámenes
-• Calificación acumulada actualizada
-• Estado de aprobación de cada materia
+Si tienes dudas, por favor contáctame.
 
-💡 *Recuerda:* Tu esfuerzo y dedicación son la clave del éxito. ¡Sigue trabajando con constancia!
-
-Si tienes alguna pregunta sobre tus calificaciones, no dudes en contactarnos.
-
----
-_GradeApp - Sistema de Gestión Académica_
+Atte. Tu Profesor
         `.trim();
-
-        if (pdfUrl) {
-            message += `\n\n📄 *Descarga tu reporte:*\n${pdfUrl}`;
-        }
-
-        return message;
     },
 
     /**
-     * Enviar reporte a estudiante por WhatsApp
-     * @param {Object} student - Datos del estudiante
-     * @param {string} pdfUrl - URL del PDF (opcional)
-     * @returns {Promise} Resultado del envío
-     */
-    sendStudentReport: async (student, pdfUrl = null) => {
-        if (!student.phone) {
-            throw new Error(`El estudiante ${student.name} no tiene número de teléfono registrado`);
-        }
-
-        const message = WhatsAppService.generateReportMessage(student, pdfUrl);
-        
-        return await WhatsAppService.sendMessage(
-            student.phone,
-            message
-        );
-    },
-
-    /**
-     * Enviar mensajes masivos por WhatsApp
-     * @param {Array} messages - Array de mensajes
-     * @param {Function} onProgress - Callback de progreso
-     * @returns {Promise<Array>} Resultados
+     * Enviar mensajes masivos (Iterativo con pausas para abrir pestañas)
      */
     sendBulkMessages: async (messages, onProgress = null) => {
         const results = [];
@@ -148,7 +124,12 @@ _GradeApp - Sistema de Gestión Académica_
             const messageData = messages[i];
             
             try {
-                const result = await WhatsAppService.sendMessage(
+                // En modo web, "enviar" masivo significa abrir muchas pestañas. 
+                // Es intrusivo, pero es lo que hay sin API oficial.
+                // Pedimos confirmación o pausa? No, el usuario pidió acción.
+                // Tal vez un alert entre cada uno o simplemente abrirlo.
+                
+                await WhatsAppService.sendMessage(
                     messageData.to,
                     messageData.message
                 );
@@ -156,11 +137,9 @@ _GradeApp - Sistema de Gestión Académica_
                 results.push({
                     to: messageData.to,
                     student: messageData.student,
-                    success: true,
-                    ...result
+                    success: true
                 });
 
-                // Callback de progreso
                 if (onProgress) {
                     onProgress({
                         current: i + 1,
@@ -169,6 +148,10 @@ _GradeApp - Sistema de Gestión Académica_
                         status: 'success'
                     });
                 }
+                
+                // Pequeña pausa para no colapsar el navegador
+                await new Promise(resolve => setTimeout(resolve, 800));
+
             } catch (error) {
                 results.push({
                     to: messageData.to,
@@ -176,8 +159,7 @@ _GradeApp - Sistema de Gestión Académica_
                     success: false,
                     error: error.message
                 });
-
-                // Callback de progreso
+                
                 if (onProgress) {
                     onProgress({
                         current: i + 1,
@@ -188,55 +170,21 @@ _GradeApp - Sistema de Gestión Académica_
                     });
                 }
             }
-
-            // Delay entre mensajes (1 segundo)
-            if (i < messages.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
         }
 
         return results;
     },
 
-    /**
-     * Validar número de teléfono
-     * @param {string} phone - Número de teléfono
-     * @returns {Promise<Object>} Validación
-     */
     validatePhone: async (phone) => {
-        try {
-            const response = await fetch('http://localhost:3001/api/whatsapp/validate-phone', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ phone })
-            });
-
-            return await response.json();
-        } catch (error) {
-            return {
-                valid: false,
-                message: 'Error al validar número'
-            };
-        }
+        // Validación local simple
+        const clean = phone.replace(/[^\d]/g, '');
+        return {
+            valid: clean.length >= 10,
+            message: clean.length >= 10 ? 'Válido' : 'Muy corto'
+        };
     },
-
-    /**
-     * Verificar configuración de WhatsApp
-     * @returns {Promise<Object>} Estado de configuración
-     */
-    checkConfiguration: async () => {
-        try {
-            const response = await fetch('http://localhost:3001/api/whatsapp/config');
-            return await response.json();
-        } catch (error) {
-            return {
-                configured: false,
-                message: 'Error al verificar configuración'
-            };
-        }
-    }
+    
+    checkConfiguration: async () => ({ configured: true })
 };
 
 export default WhatsAppService;
