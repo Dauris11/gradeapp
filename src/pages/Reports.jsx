@@ -529,7 +529,7 @@ const Reports = () => {
           <IconWrapper bg="rgba(139, 92, 246, 0.1)" color="#8B5CF6"><Settings size={26} /></IconWrapper>
           <ActionTitle>Configurar Correo</ActionTitle>
           <ActionDescription>Conecta tu cuenta de Gmail para enviar reportes.</ActionDescription>
-          <MainButton bg="#F1F5F9" color="#475569" shadow="none" onClick={() => setShowEmailConfig(true)}>
+          <MainButton bg="#F1F5F9" color="#e4185cff" shadow="none" onClick={() => setShowEmailConfig(true)}>
             <Settings size={18} /> Configurar
           </MainButton>
         </ActionCard>
