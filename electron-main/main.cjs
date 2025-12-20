@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -42,7 +42,7 @@ function createUpdateWindow() {
 autoUpdater.on('checking-for-update', () => {
     // Si la APP ya está abierta, no molestamos con la ventana de carga
     // Solo si estamos en el arranque (splash) podríamos mostrar algo, o dejarlo silencioso
-    console.log('� Buscando actualizaciones...');
+    console.log('🔄 Buscando actualizaciones...');
 });
 
 autoUpdater.on('update-available', () => {
@@ -132,6 +132,7 @@ if (process.env.NODE_ENV === 'development') {
 // Configurar variables de entorno para el backend
 process.env.DB_PATH_CUSTOM = dbPath;
 process.env.WHATSAPP_SESSION_PATH = whatsappSessionPath;
+process.env.USER_DATA_PATH = userDataPath; // Para otros archivos como email-config.json
 
 let backendServer;
 try {
@@ -140,6 +141,7 @@ try {
     backendServer = require('../backend/server.js');
 } catch (err) {
     console.error('❌ Error fatal cargando módulo de backend:', err);
+    dialog.showErrorBox('Error de Inicio', `No se pudo iniciar el servicio de backend.\nError: ${err.message}\nVerifica la instalación.`);
 }
 
 function startServer() {
@@ -148,7 +150,10 @@ function startServer() {
         // El puerto puede ser 3001
         try {
              backendServer.startServer(3001);
-        } catch(e) { console.error('Error starting server', e); }
+        } catch(e) { 
+            console.error('Error starting server', e); 
+            dialog.showErrorBox('Error de Servidor', `El servidor backend falló al iniciar.\nError: ${e.message}`);
+        }
     }
 }
 

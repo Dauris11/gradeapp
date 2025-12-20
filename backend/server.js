@@ -14,10 +14,14 @@ app.use(cors());
 app.use(express.json());
 
 // Cargar configuración de email persistente si existe
+// Cargar configuración de email persistente si existe
 const fs = require('fs');
 const path = require('path');
+// Usar USER_DATA_PATH si está definido globalmente (desde Electron) o __dirname (desarrollo/node)
+const userDataPath = process.env.USER_DATA_PATH || __dirname;
+
 try {
-    const configPath = path.join(__dirname, 'email-config.json');
+    const configPath = path.join(userDataPath, 'email-config.json');
     if (fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (config.EMAIL_USER) process.env.EMAIL_USER = config.EMAIL_USER;
@@ -434,10 +438,12 @@ app.post('/api/email/config', (req, res) => {
     process.env.FROM_NAME = name || 'GradeApp';
 
     // Persistencia simple en archivo JSON (opcional pero recomendada)
+    // Persistencia simple en archivo JSON (opcional pero recomendada)
     const fs = require('fs');
     const path = require('path');
     try {
-        const configPath = path.join(__dirname, 'email-config.json');
+        const userDataPath = process.env.USER_DATA_PATH || __dirname;
+        const configPath = path.join(userDataPath, 'email-config.json');
         fs.writeFileSync(configPath, JSON.stringify({
             EMAIL_USER: email,
             EMAIL_PASS: password,
@@ -490,10 +496,8 @@ app.post('/api/email/send-bulk', async (req, res) => {
 // ==================== RUTAS DE WHATSAPP (GRATIS) ====================
 
 // Verificar estado de WhatsApp
-app.get('/api/whatsapp/status', (req, res) => {
-    const status = whatsappService.checkStatus();
-    res.json(status);
-});
+// Verificar estado de WhatsApp - REMOVED DUPLICATE ROUTE
+// app.get('/api/whatsapp/status', ...); USE THE ONE BELOW
 
 // Enviar mensaje de WhatsApp individual
 app.post('/api/whatsapp/send', async (req, res) => {
@@ -594,7 +598,11 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Manejar cualquier ruta que no sea API devolviendo el index.html (SPA)
-app.get('*', (req, res) => {
+// Manejar cualquier ruta que no sea API devolviendo el index.html (SPA)
+// NOTA: Express 5 requiere (.*) en lugar de * para el catch-all
+// Manejar cualquier ruta que no sea API devolviendo el index.html (SPA)
+// NOTA: Usar RegExp para evitar conflictos con path-to-regexp en Express 5
+app.get(/.*/, (req, res) => {
     // Si la ruta comienza con /api, no interferir
     if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Endpoint no encontrado' });
     res.sendFile(path.join(__dirname, '../dist/index.html'));
