@@ -258,6 +258,24 @@ const ModalBox = styled(motion.div)`
   position: relative;
 `;
 
+const IconButton = styled.button`
+    background: transparent;
+    border: none;
+    color: ${props => props.theme.colors.slate[400]};
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    
+    &:hover {
+        background: ${props => props.theme.colors.slate[100]};
+        color: ${props => props.theme.colors.slate[600]};
+    }
+`;
+
 const Input = styled.input`
   width: 100%;
   padding: 14px;
@@ -276,7 +294,7 @@ const Input = styled.input`
 
 const Reports = () => {
   const toast = useToast();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [students, setStudents] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -337,68 +355,82 @@ const Reports = () => {
     }
   };
 
+  // Opción 2: Abrir enlace directo a WhatsApp + Descargar PDF
   const handleSendWhatsApp = async (student) => {
-    try {
-      const status = await WhatsAppService.checkStatus();
-
-      if (!status.connected && !status.ready) {
-        toast.error('WhatsApp no está conectado.', t('common.error'));
-        return;
-      }
-
-      if (!student.phone || student.phone.trim() === '') {
-        setCurrentStudent(student);
-        setPhoneInput('');
-        setShowPhoneModal(true);
-        return;
-      }
-
-      await sendWhatsAppMessage(student, student.phone);
-    } catch (error) {
-      console.error('Error checking WhatsApp:', error);
-      toast.error(t('common.error'), t('common.error'));
+    // Si no tiene teléfono, mostrar modal para pedirlo
+    if (!student.phone || student.phone.trim() === '') {
+      setCurrentStudent(student);
+      setPhoneInput('');
+      setShowPhoneModal(true);
+      return;
     }
+
+    await prepareAndOpenWhatsApp(student, student.phone);
   };
 
-  const sendWhatsAppMessage = async (student, phone) => {
+  const prepareAndOpenWhatsApp = async (student, phone) => {
     try {
       setSendingWhatsApp(prev => ({ ...prev, [student.id]: true }));
+      toast.info('Generando reporte y enlace...', 'Procesando');
 
+      // 1. Generar y Descargar PDF
+      // Lo hacemos primero para que el archivo esté listo
       const studentEnrollments = enrollments.filter(e => e.studentId === student.id);
       const studentGrades = grades.filter(g => studentEnrollments.some(e => e.id === g.enrollmentId));
 
-      const message = WhatsAppService.generateReportMessage(student, studentEnrollments, studentGrades);
-      await WhatsAppService.sendMessage(phone, message);
+      try {
+        const doc = await PDFService.generateStudentReport(student, studentEnrollments, studentGrades);
+        const fileName = `Reporte_${student.name.replace(/\s+/g, '_')}.pdf`;
+        PDFService.downloadPDF(doc, fileName);
+        console.log("✅ PDF Descargado:", fileName);
+      } catch (pdfError) {
+        console.error("Error generando PDF:", pdfError);
+        toast.warning("No se pudo generar el PDF, pero abriremos WhatsApp.");
+      }
 
-      toast.success(`WhatsApp: ${t('common.success')}`, t('common.success'));
+      // 2. Generar mensaje y Abrir WhatsApp (con pequeño retraso para asegurar que la UI no se bloquee)
+      setTimeout(() => {
+        const messageText = WhatsAppService.generateReportMessage(student, studentEnrollments, studentGrades);
+        const encodedMessage = encodeURIComponent(messageText);
 
-      setShowPhoneModal(false);
-      setCurrentStudent(null);
-      setPhoneInput('');
+        const cleanPhone = phone.replace(/[^\d]/g, '');
+        const url = `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+
+        console.log("🚀 Abriendo WhatsApp con URL:", url);
+
+        // Usamos window.open con _blank
+        const win = window.open(url, '_blank');
+        if (!win) {
+          // Fallback si el navegador bloquea el popup
+          console.warn("Popup bloqueado, intentando redirección directa");
+          window.location.href = url;
+        }
+
+        toast.success('👉 ¡Arrastra el PDF descargado al chat!', 'Listo', 6000);
+        setSendingWhatsApp(prev => ({ ...prev, [student.id]: false }));
+        setShowPhoneModal(false);
+      }, 1500); // 1.5 segundos de espera
 
     } catch (error) {
-      console.error('Error sending WhatsApp:', error);
-      const errorMsg = error.message || t('common.error');
-      toast.error(`${t('common.error')}: ${errorMsg}`, t('common.error'));
-    } finally {
+      console.error('Error general en WhatsApp:', error);
+      toast.error('Ocurrió un error inesperado');
       setSendingWhatsApp(prev => ({ ...prev, [student.id]: false }));
     }
   };
 
+  // Función auxiliar para cuando se ingresa el número manual
   const handleConfirmPhone = async () => {
     if (!phoneInput || phoneInput.trim() === '') {
       toast.error(t('common.warning'), t('common.warning'));
       return;
     }
-
     const cleanPhone = phoneInput.replace(/[^\d]/g, '');
-    if (cleanPhone.length < 10) {
-      toast.error('Invalid Phone', t('common.error'));
-      return;
-    }
-
-    await sendWhatsAppMessage(currentStudent, cleanPhone);
+    await prepareAndOpenWhatsApp(currentStudent, cleanPhone);
   };
+
+  /* Lógica anterior eliminada
+  const sendWhatsAppMessage = async (student, phone) => { ... }
+  */
 
   const handleGenerateConsolidatedPDF = async () => {
     try {
@@ -422,7 +454,7 @@ const Reports = () => {
         setProgress(p => [...p, { name: student.name, status: 'generated' }]);
       } catch (err) { setProgress(p => [...p, { name: student.name, status: 'error' }]); }
     }
-    const results = await EmailService.sendBulkReports(reports);
+    const results = await EmailService.sendBulkReports(reports, null, language || 'es');
     results.forEach(res => setProgress(p => p.map(it => it.name === res.student ? { ...it, status: res.success ? 'sent' : 'error' } : it)));
     toast.success(t('common.success'));
     setIsProcessing(false);
@@ -495,10 +527,10 @@ const Reports = () => {
 
         <ActionCard $accent="#8B5CF6" whileHover={{ y: -5 }}>
           <IconWrapper bg="rgba(139, 92, 246, 0.1)" color="#8B5CF6"><Settings size={26} /></IconWrapper>
-          <ActionTitle>{t('settings.title')}</ActionTitle>
-          <ActionDescription>Personaliza los datos del remitente.</ActionDescription>
+          <ActionTitle>Configurar Correo</ActionTitle>
+          <ActionDescription>Conecta tu cuenta de Gmail para enviar reportes.</ActionDescription>
           <MainButton bg="#F1F5F9" color="#475569" shadow="none" onClick={() => setShowEmailConfig(true)}>
-            <Settings size={18} /> {t('common.edit')}
+            <Settings size={18} /> Configurar
           </MainButton>
         </ActionCard>
       </ActionsGrid>
@@ -517,9 +549,19 @@ const Reports = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600' }}>
               <CheckCircle2 size={16} /> {selectedStudents.length} seleccionados
             </div>
-            <SelectAllBtn onClick={() => setSelectedStudents(selectedStudents.length === students.length ? [] : students.map(s => s.id))}>
-              {selectedStudents.length === students.length ? 'Deseleccionar' : 'Seleccionar Todo'}
-            </SelectAllBtn>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <SelectAllBtn onClick={() => setSelectedStudents(students.map(s => s.id))}>
+                Seleccionar Todo
+              </SelectAllBtn>
+              {selectedStudents.length > 0 && (
+                <SelectAllBtn
+                  onClick={() => setSelectedStudents([])}
+                  style={{ background: 'rgba(255, 255, 255, 0.15)', border: '1px solid rgba(255,255,255,0.3)' }}
+                >
+                  Deseleccionar
+                </SelectAllBtn>
+              )}
+            </div>
           </BulkBar>
         )}
 
@@ -586,9 +628,40 @@ const Reports = () => {
                 <IconButton onClick={() => setShowEmailConfig(false)}><X size={20} /></IconButton>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div><label style={{ fontSize: '14px', fontWeight: '700' }}>Remitente</label><Input value={emailConfig.fromName} onChange={e => setEmailConfig({ ...emailConfig, fromName: e.target.value })} /></div>
-                <div><label style={{ fontSize: '14px', fontWeight: '700' }}>Email de origen</label><Input value={emailConfig.fromEmail} onChange={e => setEmailConfig({ ...emailConfig, fromEmail: e.target.value })} /></div>
-                <MainButton style={{ marginTop: '12px' }} onClick={() => { EmailService.setInstitutionalEmail(emailConfig.fromEmail, emailConfig.fromName, emailConfig.replyTo); setShowEmailConfig(false); toast.success('Ajustes guardados'); }}>Guardar Cambios</MainButton>
+                <div><label style={{ fontSize: '14px', fontWeight: '700' }}>Nombre Remitente</label><Input value={emailConfig.fromName} onChange={e => setEmailConfig({ ...emailConfig, fromName: e.target.value })} /></div>
+                <div><label style={{ fontSize: '14px', fontWeight: '700' }}>Tu Correo (Gmail)</label><Input value={emailConfig.fromEmail} onChange={e => setEmailConfig({ ...emailConfig, fromEmail: e.target.value })} /></div>
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '700' }}>Contraseña de Aplicación</label>
+                  <Input
+                    type="password"
+                    placeholder="Ej: xxxx xxxx xxxx xxxx"
+                    value={emailConfig.password || ''}
+                    onChange={e => setEmailConfig({ ...emailConfig, password: e.target.value })}
+                  />
+                  <p style={{ fontSize: '11px', color: '#64748B', marginTop: '4px' }}>
+                    Nota: Debes generar una <a href="https://myaccount.google.com/apppasswords" target="_blank" style={{ color: '#3B82F6' }}>Contraseña de Aplicación</a> en tu cuenta de Google. No uses tu contraseña normal.
+                  </p>
+                </div>
+
+                <MainButton
+                  style={{ marginTop: '12px' }}
+                  onClick={async () => {
+                    if (!emailConfig.password) return toast.error('La contraseña es requerida');
+                    try {
+                      setIsProcessing(true);
+                      await EmailService.saveConfiguration(emailConfig.fromEmail, emailConfig.password, emailConfig.fromName);
+                      setShowEmailConfig(false);
+                      toast.success('Configuración guardada y lista para enviar');
+                    } catch (e) {
+                      toast.error('Error guardando configuración');
+                    } finally {
+                      setIsProcessing(false);
+                    }
+                  }}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Guardando...' : 'Guardar y Conectar Gmail'}
+                </MainButton>
               </div>
             </ModalBox>
           </Modal>

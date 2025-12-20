@@ -116,8 +116,18 @@ ipcMain.on('close_update_window', () => {
 // ---------------------------------------------------------------------------
 
 const userDataPath = app.getPath('userData');
-const dbPath = path.join(userDataPath, 'grade_manager.db');
-const whatsappSessionPath = path.join(userDataPath, 'whatsapp-session');
+let dbPath;
+let whatsappSessionPath;
+
+if (process.env.NODE_ENV === 'development') {
+  // En desarrollo, usar la DB local del proyecto para ver los datos de prueba
+  dbPath = path.join(__dirname, '../backend/grade_manager.db');
+  whatsappSessionPath = path.join(__dirname, '../backend/whatsapp-session');
+} else {
+  // En producción, usar AppData
+  dbPath = path.join(userDataPath, 'grade_manager.db');
+  whatsappSessionPath = path.join(userDataPath, 'whatsapp-session');
+}
 
 // Configurar variables de entorno para el backend
 process.env.DB_PATH_CUSTOM = dbPath;
@@ -218,11 +228,29 @@ function createWindow() {
     mainWindow = null;
   });
 
-  mainWindow.webContents.on('will-navigate', (event, url) => {
-    if (!url.startsWith('http://localhost:5173') && !url.startsWith('file://')) {
-      event.preventDefault();
-      require('electron').shell.openExternal(url); // Abrir enlaces externos en navegador
+  // Manejar navegación interna y externa
+  const handleNavigation = (event, url) => {
+    // Permitir navegación local (localhost, file:// o blob:)
+    if (url.startsWith('http://localhost') || url.startsWith('file://') || url.startsWith('blob:')) {
+      return;
     }
+    
+    // Bloquear navegación interna a sitios externos y abrir en navegador del sistema
+    event.preventDefault();
+    require('electron').shell.openExternal(url);
+  };
+
+  mainWindow.webContents.on('will-navigate', handleNavigation);
+  
+  // Importante: interceptar window.open (target="_blank")
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url.startsWith('http://localhost') || url.startsWith('file://') || url.startsWith('blob:')) {
+      return { action: 'allow' };
+    }
+    
+    // Abrir externos (como WhatsApp) en navegador predeterminado
+    require('electron').shell.openExternal(url);
+    return { action: 'deny' };
   });
 }
 

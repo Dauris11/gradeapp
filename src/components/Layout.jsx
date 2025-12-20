@@ -400,23 +400,8 @@ const Layout = () => {
     if (isMobile) setSidebarOpen(false);
   }, [location.pathname, isMobile]);
 
-  // Verificar estado de WhatsApp al cargar
-  useEffect(() => {
-    const checkWhatsAppStatus = async () => {
-      try {
-        const response = await fetch('http://localhost:3001/api/whatsapp/status');
-        const data = await response.json();
-        if (!data.connected) {
-          // Mostrar modal después de 2 segundos si no está conectado
-          setTimeout(() => setShowWhatsAppQR(true), 2000);
-        }
-      } catch (err) {
-        console.log('WhatsApp service not available');
-      }
-    };
-
-    checkWhatsAppStatus();
-  }, []);
+  // Verificar estado de WhatsApp eliminado a petición
+  // useEffect(() => { ... }, []);
 
   const navItems = [
     {
@@ -537,9 +522,11 @@ const Layout = () => {
           </NavLeft>
 
           <NavRight>
+            {/* WhatsApp button removed
             <IconButton onClick={() => setShowWhatsAppQR(true)} title="Conectar WhatsApp">
               <MessageCircle size={20} />
             </IconButton>
+            */}
             <IconButton onClick={() => setShowNotifications(!showNotifications)} title="Notificaciones">
               <Bell size={20} />
               <Badge />
@@ -583,10 +570,12 @@ const Layout = () => {
         </ContentArea>
       </MainContent>
 
+      {/* WhatsAppQRModal removed
       <WhatsAppQRModal
         isOpen={showWhatsAppQR}
         onClose={() => setShowWhatsAppQR(false)}
       />
+      */}
 
       <SettingsModal
         isOpen={showSettings}

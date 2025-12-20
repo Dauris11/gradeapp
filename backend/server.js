@@ -13,6 +13,26 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 
+// Cargar configuración de email persistente si existe
+const fs = require('fs');
+const path = require('path');
+try {
+    const configPath = path.join(__dirname, 'email-config.json');
+    if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        if (config.EMAIL_USER) process.env.EMAIL_USER = config.EMAIL_USER;
+        if (config.EMAIL_PASS) process.env.EMAIL_PASS = config.EMAIL_PASS;
+        if (config.FROM_NAME) process.env.FROM_NAME = config.FROM_NAME;
+        console.log('📧 Configuración de email cargada desde archivo local');
+    }
+} catch (e) { console.warn('No hay configuración de email guardada'); }
+
+// Logger middleware
+app.use((req, res, next) => {
+    console.log(`📡 Request: ${req.method} ${req.url}`);
+    next();
+});
+
 // Inicializar base de datos
 // Inicialización diferida
 // initDatabase se llamará en startServer
@@ -393,10 +413,41 @@ app.delete('/api/grades/:id', (req, res) => {
 // ==================== RUTAS DE EMAIL ====================
 const emailService = require('./emailService');
 
-// Verificar configuración de SendGrid
+// Verificar configuración de Email
 app.get('/api/email/config', (req, res) => {
     const config = emailService.checkConfiguration();
     res.json(config);
+});
+
+// Guardar configuración de Email (Gmail)
+app.post('/api/email/config', (req, res) => {
+    const { email, password, name } = req.body;
+    
+    if (!email || !password) {
+        return res.status(400).json({ success: false, error: 'Email y contraseña son requeridos' });
+    }
+
+    // Actualizar variables en memoria
+    process.env.EMAIL_USER = email;
+    process.env.EMAIL_PASS = password;
+    process.env.FROM_EMAIL = email;
+    process.env.FROM_NAME = name || 'GradeApp';
+
+    // Persistencia simple en archivo JSON (opcional pero recomendada)
+    const fs = require('fs');
+    const path = require('path');
+    try {
+        const configPath = path.join(__dirname, 'email-config.json');
+        fs.writeFileSync(configPath, JSON.stringify({
+            EMAIL_USER: email,
+            EMAIL_PASS: password,
+            FROM_NAME: name
+        }, null, 2));
+    } catch (e) {
+        console.error('Error guardando config:', e);
+    }
+    
+    res.json({ success: true, message: 'Configuración guardada correctamente' });
 });
 
 // Enviar email individual
@@ -540,12 +591,11 @@ app.post('/api/whatsapp/disconnect', async (req, res) => {
 });
 
 // Servir archivos estáticos del build de React (Producción)
-const path = require('path');
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Manejar cualquier ruta que no sea API devolviendo el index.html (SPA)
 app.get('*', (req, res) => {
-    // Si la ruta comienza con /api, no interferir (aunque express router debería manejarlo antes)
+    // Si la ruta comienza con /api, no interferir
     if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Endpoint no encontrado' });
     res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
@@ -560,8 +610,15 @@ function startServer(port = 3001) {
     
     // Inicializar WhatsApp con ruta configurada (si existe env)
     // DESACTIVADO EN PROD: Usamos redirección Web en Frontend para evitar crash de Puppeteer
+    // Inicializar WhatsApp con ruta configurada (si existe env)
     // const whatsappSessionPath = process.env.WHATSAPP_SESSION_PATH;
-    // whatsappService.initializeWhatsApp(whatsappSessionPath);
+    // try {
+    //     // En desarrollo activamos la ventana para depurar (petición usuario)
+    //     whatsappService.initializeWhatsApp(whatsappSessionPath);
+    //     console.log('📱 WhatsApp Backend INICIADO');
+    // } catch (e) {
+    //     console.error('Error al iniciar WhatsApp:', e);
+    // }
     console.log('⚠️ WhatsApp Backend desactivado (Modo Web Frontend)');
 
     // Iniciar servidor

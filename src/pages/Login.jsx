@@ -319,7 +319,8 @@ const Login = () => {
         setError(data.message || 'Credenciales inválidas');
       }
     } catch (err) {
-      setError('Error de conexión con el servidor');
+      console.error('Login error:', err);
+      setError(`Error de conexión: ${err.message || 'Sin respuesta del servidor'}`);
     } finally {
       setLoading(false);
     }

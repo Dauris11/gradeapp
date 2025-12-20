@@ -1,115 +1,93 @@
-// Servicio de envío de emails con SendGrid
-const sgMail = require('@sendgrid/mail');
+// Servicio de envío de emails usando Gmail (Nodemailer)
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-// Configurar SendGrid con la API Key
-if (process.env.SENDGRID_API_KEY) {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    console.log('✅ SendGrid configurado correctamente');
-} else {
-    console.warn('⚠️ SENDGRID_API_KEY no configurada. Los emails no se enviarán.');
-}
+// Crear el transportador reutilizable
+const createTransporter = () => {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        return null;
+    }
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS // Debe ser una "Contraseña de Aplicación" de Google
+        }
+    });
+};
 
 /**
- * Enviar email con SendGrid
+ * Enviar email usando Gmail
  * @param {Object} emailData - Datos del email
- * @param {string} emailData.to - Destinatario
- * @param {string} emailData.from - Remitente
- * @param {string} emailData.fromName - Nombre del remitente
- * @param {string} emailData.replyTo - Correo de respuesta
- * @param {string} emailData.subject - Asunto
- * @param {string} emailData.html - Contenido HTML
- * @param {Object} emailData.attachment - Adjunto (opcional)
- * @returns {Promise} Resultado del envío
  */
 const sendEmail = async (emailData) => {
     try {
-        const { to, from, fromName, replyTo, subject, html, attachment } = emailData;
+        const transporter = createTransporter();
 
-        // Validar que SendGrid esté configurado
-        if (!process.env.SENDGRID_API_KEY) {
-            throw new Error('SendGrid no está configurado. Agrega SENDGRID_API_KEY al archivo .env');
+        if (!transporter) {
+            throw new Error('Credenciales de Gmail no configuradas. Necesitas EMAIL_USER y EMAIL_PASS en el archivo .env');
         }
 
-        // Construir mensaje
-        const msg = {
-            to,
-            from: {
-                email: from || process.env.FROM_EMAIL || 'noreply@gradeapp.com',
-                name: fromName || process.env.FROM_NAME || 'GradeApp'
-            },
-            replyTo: replyTo || process.env.REPLY_TO_EMAIL || from,
-            subject,
-            html
+        const { to, fromName, subject, html, attachment } = emailData;
+
+        const mailOptions = {
+            from: `"${fromName || 'GradeApp'}" <${process.env.EMAIL_USER}>`,
+            to: to,
+            subject: subject,
+            html: html
         };
 
-        // Agregar adjunto si existe
         if (attachment && attachment.data) {
-            msg.attachments = [{
-                content: attachment.data,
+            mailOptions.attachments = [{
                 filename: attachment.name || 'documento.pdf',
-                type: attachment.type || 'application/pdf',
-                disposition: 'attachment'
+                content: attachment.data, // Puede ser Buffer, Stream o Base64 string
+                encoding: 'base64'
             }];
         }
 
-        // Enviar email
-        console.log(`📧 Enviando email a: ${to}`);
-        const response = await sgMail.send(msg);
+        console.log(`📧 Enviando email a: ${to} desde ${process.env.EMAIL_USER}`);
         
-        console.log(`✅ Email enviado exitosamente a ${to}`);
+        const info = await transporter.sendMail(mailOptions);
+        
+        console.log(`✅ Email enviado: ${info.messageId}`);
         return {
             success: true,
-            message: `Email enviado exitosamente a ${to}`,
-            messageId: response[0].headers['x-message-id'],
-            statusCode: response[0].statusCode
+            message: `Email enviado a ${to}`,
+            messageId: info.messageId
         };
 
     } catch (error) {
-        console.error('❌ Error al enviar email:', error);
-        
-        // Manejar errores específicos de SendGrid
-        if (error.response) {
-            const { message, code, response } = error;
-            return {
-                success: false,
-                error: message,
-                code,
-                details: response?.body?.errors || []
-            };
-        }
-
+        console.error('❌ Error enviando email:', error);
         return {
             success: false,
-            error: error.message || 'Error desconocido al enviar email'
+            error: error.message
         };
     }
 };
 
 /**
- * Enviar múltiples emails
- * @param {Array} emails - Array de datos de emails
- * @returns {Promise<Array>} Resultados de los envíos
+ * Enviar múltiples emails con delay para evitar bloqueo
  */
 const sendBulkEmails = async (emails) => {
     const results = [];
+    
+    // Verificar configuración una sola vez
+    const transporter = createTransporter();
+    if (!transporter) {
+        return emails.map(e => ({ to: e.to, success: false, error: 'Gmail no configurado' }));
+    }
 
     for (const emailData of emails) {
         try {
             const result = await sendEmail(emailData);
-            results.push({
-                to: emailData.to,
-                ...result
-            });
-
-            // Pequeño delay entre envíos para no saturar
-            await new Promise(resolve => setTimeout(resolve, 100));
+            results.push(result);
+            
+            // Pausa de 1 segundos entre correos para no saturar Gmail (rate limits)
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
         } catch (error) {
-            results.push({
-                to: emailData.to,
-                success: false,
-                error: error.message
-            });
+            results.push({ to: emailData.to, success: false, error: error.message });
         }
     }
 
@@ -117,20 +95,17 @@ const sendBulkEmails = async (emails) => {
 };
 
 /**
- * Verificar configuración de SendGrid
- * @returns {Object} Estado de la configuración
+ * Verificar estado de la configuración
  */
 const checkConfiguration = () => {
-    const isConfigured = !!process.env.SENDGRID_API_KEY;
+    const isConfigured = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
     
     return {
         configured: isConfigured,
-        fromEmail: process.env.FROM_EMAIL || 'No configurado',
-        fromName: process.env.FROM_NAME || 'No configurado',
-        replyTo: process.env.REPLY_TO_EMAIL || 'No configurado',
+        user: process.env.EMAIL_USER || 'No definido',
         message: isConfigured 
-            ? 'SendGrid está configurado y listo para usar'
-            : 'SendGrid no está configurado. Agrega SENDGRID_API_KEY al archivo .env'
+            ? 'Gmail configurado correctamente (Verificar contraseña de aplicación)' 
+            : 'Faltan credenciales. Agrega EMAIL_USER y EMAIL_PASS al .env'
     };
 };
 

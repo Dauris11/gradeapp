@@ -10,6 +10,12 @@ let qrCodeData = null;
 /**
  * Inicializar cliente de WhatsApp Web
  */
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Inicializar cliente de WhatsApp Web
+ */
 const initializeWhatsApp = (sessionPath) => {
     if (whatsappClient) {
         console.log('✅ Cliente de WhatsApp ya inicializado');
@@ -19,21 +25,48 @@ const initializeWhatsApp = (sessionPath) => {
     console.log('🔄 Inicializando WhatsApp Web...');
     console.log('📂 Ruta de sesión:', sessionPath || './whatsapp-session');
 
+    // Buscar instalación local de Chrome o Edge para usar la versión más reciente
+    const browserPaths = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe'),
+        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+        process.env.CHROME_PATH
+    ];
+    
+    const executablePath = browserPaths.find(p => p && fs.existsSync(p));
+    
+    if (executablePath) {
+        console.log('🌐 Usando Navegador del sistema:', executablePath);
+    } else {
+        console.log('⚠️ No se encontró Chrome/Edge local. Esto puede causar el error de "Versión 85".');
+        console.log('👉 Por favor instala Google Chrome para solucionar este problema.');
+    }
+
     whatsappClient = new Client({
         authStrategy: new LocalAuth({
             dataPath: sessionPath || './whatsapp-session'
         }),
         puppeteer: {
-            headless: true,
+            headless: false,
+            executablePath: executablePath, // Importante: usar navegador del sistema
             args: [
+                '--app=https://web.whatsapp.com',
+                '--window-size=1200,800',
+                // Eliminamos User-Agent forzado para que use el nativo del navegador actualizado
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
                 '--disable-dev-shm-usage',
                 '--disable-accelerated-2d-canvas',
                 '--no-first-run',
                 '--no-zygote',
-                '--disable-gpu'
-            ]
+                '--disable-gpu',
+                '--disable-blink-features=AutomationControlled',
+                '--hide-scrollbars',
+                '--mute-audio'
+            ],
+            ignoreDefaultArgs: ['--enable-automation']
         }
     });
 
@@ -43,6 +76,9 @@ const initializeWhatsApp = (sessionPath) => {
         qrcode.generate(qr, { small: true });
         qrCodeData = qr;
         console.log('\n💡 También puedes escanear el QR desde la app web en: http://localhost:3001/api/whatsapp/qr\n');
+        
+        // Intentar poner el logo aunque sea en la pantalla de QR (si tenemos acceso a page)
+        injectAppIcon(whatsappClient);
     });
 
     // Evento: Cliente listo
@@ -50,6 +86,7 @@ const initializeWhatsApp = (sessionPath) => {
         console.log('✅ WhatsApp Web conectado y listo!');
         isReady = true;
         qrCodeData = null;
+        injectAppIcon(whatsappClient);
     });
 
     // Evento: Autenticación exitosa
@@ -85,6 +122,42 @@ const initializeWhatsApp = (sessionPath) => {
     whatsappClient.initialize().catch(err => {
         console.error('❌ Error al inicializar WhatsApp:', err);
     });
+};
+
+/**
+ * Inyectar icono de la aplicación en la ventana de Puppeteer
+ */
+const injectAppIcon = async (client) => {
+    try {
+        // pupPage es accesible en versiones recientes de whatsapp-web.js
+        const page = client.pupPage;
+        if (!page) return;
+
+        const logoPath = path.join(__dirname, '../public/imagenes/logo-principal.png');
+        if (fs.existsSync(logoPath)) {
+            const iconBase64 = fs.readFileSync(logoPath).toString('base64');
+            const iconDataUri = `data:image/png;base64,${iconBase64}`;
+            
+            await page.evaluate((iconUrl) => {
+                // Función para cambiar el favicon
+                const setFavicon = () => {
+                    let link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+                    link.type = 'image/png';
+                    link.rel = 'shortcut icon';
+                    link.href = iconUrl;
+                    document.getElementsByTagName('head')[0].appendChild(link);
+                };
+                
+                setFavicon();
+                // Observador para mantener el icono si WhatsApp intenta cambiarlo (notificaciones, etc)
+                const observer = new MutationObserver(() => setFavicon());
+                observer.observe(document.head, { subtree: true, childList: true, attributes: true });
+            }, iconDataUri);
+            console.log('🎨 Icono de aplicación inyectado en WhatsApp Web');
+        }
+    } catch (error) {
+        console.error('⚠️ No se pudo inyectar el icono:', error.message);
+    }
 };
 
 /**
