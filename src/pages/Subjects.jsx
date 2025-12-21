@@ -441,8 +441,11 @@ const Subjects = () => {
         try {
             const allSubjects = await subjectsAPI.getAll();
             const enrollments = await enrollmentsAPI.getAll();
-            const enrichedSubjects = allSubjects.map(subject => {
-                const subjectEnrollments = enrollments.filter(e => e.subjectId === subject.id);
+            const combinedSubjects = Array.isArray(allSubjects) ? allSubjects : [];
+            const combinedEnrollments = Array.isArray(enrollments) ? enrollments : [];
+
+            const enrichedSubjects = combinedSubjects.map(subject => {
+                const subjectEnrollments = combinedEnrollments.filter(e => e.subjectId === subject.id);
                 const studentsWithGrades = subjectEnrollments.map(enrollment => {
                     const accumulated = gradesAPI.calculateAccumulated ? gradesAPI.calculateAccumulated(enrollment.id) : null;
                     return {
@@ -464,9 +467,10 @@ const Subjects = () => {
         try {
             const response = await fetch('http://localhost:3001/api/academic/periods');
             const data = await response.json();
-            setPeriods(data);
+            const validData = Array.isArray(data) ? data : [];
+            setPeriods(validData);
 
-            const active = data.find(p => p.isActive === 1);
+            const active = validData.find(p => p.isActive === 1);
             setActivePeriod(active);
         } catch (error) {
             console.error('Error cargando períodos:', error);

@@ -280,14 +280,14 @@ const CalendarPage = () => {
     const loadData = async () => {
         try {
             const subs = await subjectsAPI.getAll();
-            setSubjects(subs);
+            setSubjects(Array.isArray(subs) ? subs : []);
             // Cargar eventos del mes
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
             const start = new Date(year, month - 1, 1).toISOString();
             const end = new Date(year, month + 2, 0).toISOString();
             const evs = await calendarAPI.getAllEvents({ startDate: start, endDate: end });
-            setEvents(evs);
+            setEvents(Array.isArray(evs) ? evs : []);
         } catch (error) {
             console.error('Error loading calendar data:', error);
         }

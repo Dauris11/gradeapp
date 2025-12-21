@@ -344,7 +344,7 @@ const Users = () => {
     const loadUsers = async () => {
         try {
             const data = await usersAPI.getAll();
-            setUsers(data);
+            setUsers(Array.isArray(data) ? data : []);
         } catch (error) {
             toast.error('Error al cargar usuarios', 'Error');
         }

@@ -323,9 +323,10 @@ const Reports = () => {
       const [s, e, g] = await Promise.all([
         studentsAPI.getAll(), enrollmentsAPI.getAll(), gradesAPI.getAll()
       ]);
-      setStudents(s);
-      setEnrollments(e.map(item => ({ ...item, accumulated: gradesAPI.calculateAccumulated?.(item.id)?.accumulated || null })));
-      setGrades(g);
+      setStudents(Array.isArray(s) ? s : []);
+      const validEnrollments = Array.isArray(e) ? e : [];
+      setEnrollments(validEnrollments.map(item => ({ ...item, accumulated: gradesAPI.calculateAccumulated?.(item.id)?.accumulated || null })));
+      setGrades(Array.isArray(g) ? g : []);
     } catch (err) { toast.error(t('common.error')); }
   };
 
@@ -455,7 +456,9 @@ const Reports = () => {
       } catch (err) { setProgress(p => [...p, { name: student.name, status: 'error' }]); }
     }
     const results = await EmailService.sendBulkReports(reports, null, language || 'es');
-    results.forEach(res => setProgress(p => p.map(it => it.name === res.student ? { ...it, status: res.success ? 'sent' : 'error' } : it)));
+    if (Array.isArray(results)) {
+      results.forEach(res => setProgress(p => p.map(it => it.name === res.student ? { ...it, status: res.success ? 'sent' : 'error' } : it)));
+    }
     toast.success(t('common.success'));
     setIsProcessing(false);
   };
@@ -544,7 +547,7 @@ const Reports = () => {
           </div>
         </SectionHeader>
 
-        {students.length > 0 && (
+        {Array.isArray(students) && students.length > 0 && (
           <BulkBar>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', fontWeight: '600' }}>
               <CheckCircle2 size={16} /> {selectedStudents.length} seleccionados
@@ -566,7 +569,7 @@ const Reports = () => {
         )}
 
         <StudentsGrid>
-          {students.map(s => (
+          {Array.isArray(students) && students.map(s => (
             <StudentRow key={s.id} selected={selectedStudents.includes(s.id)} onClick={() => toggleSelection(s.id)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <input type="checkbox" checked={selectedStudents.includes(s.id)} readOnly style={{ width: '18px', height: '18px' }} />

@@ -239,9 +239,9 @@ const Grades = () => {
           subjectsAPI.getAll(),
           enrollmentsAPI.getAll()
         ]);
-        setStudents(studentsData);
-        setSubjects(subjectsData);
-        setEnrollments(enrollmentsData);
+        setStudents(Array.isArray(studentsData) ? studentsData : []);
+        setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+        setEnrollments(Array.isArray(enrollmentsData) ? enrollmentsData : []);
       } catch (error) {
         console.error('Error cargando datos:', error);
         setStudents([]);

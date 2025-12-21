@@ -5,7 +5,8 @@ export const usersAPI = {
     // Obtener todos los usuarios
     getAll: async () => {
         const response = await fetch(`${API_URL}/users`);
-        return await response.json();
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
     },
 
     // Obtener un usuario por ID

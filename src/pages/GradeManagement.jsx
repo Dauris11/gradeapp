@@ -374,8 +374,8 @@ const GradeManagement = () => {
 
     const loadData = async () => {
         try {
-            const allEnrollments = await enrollmentsAPI.getAll();
-            const enriched = await Promise.all(allEnrollments.map(async enrollment => {
+            const validEnrollments = Array.isArray(allEnrollments) ? allEnrollments : [];
+            const enriched = await Promise.all(validEnrollments.map(async enrollment => {
                 const grades = await gradesAPI.getByEnrollment(enrollment.id);
                 const accumulated = gradesAPI.calculateAccumulated ? gradesAPI.calculateAccumulated(enrollment.id) : null;
                 return { ...enrollment, grades: grades || [], accumulated };
@@ -452,7 +452,7 @@ const GradeManagement = () => {
                 <Label><Users size={16} /> Seleccionar Registro Académico</Label>
                 <Select value={selectedEnrollment} onChange={e => setSelectedEnrollment(e.target.value)}>
                     <option value="all">Todas las materias inscritas</option>
-                    {enrollments.map(e => <option key={e.id} value={e.id}>{e.studentName} — {e.subjectName}</option>)}
+                    {Array.isArray(enrollments) && enrollments.map(e => <option key={e.id} value={e.id}>{e.studentName} — {e.subjectName}</option>)}
                 </Select>
             </FiltersCard>
 

@@ -344,7 +344,7 @@ const Students = () => {
   const loadStudents = async () => {
     try {
       const data = await studentsAPI.getAll();
-      setStudents(data);
+      setStudents(Array.isArray(data) ? data : []);
     } catch (error) {
       toast.error(t('common.error'), t('common.error'));
     }

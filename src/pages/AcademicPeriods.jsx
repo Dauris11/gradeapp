@@ -326,7 +326,8 @@ const AcademicPeriods = () => {
       // Cargar períodos
       const periodsRes = await fetch('http://localhost:3001/api/academic/periods');
       const periodsData = await periodsRes.json();
-      setPeriods(periodsData);
+      const validPeriods = Array.isArray(periodsData) ? periodsData : [];
+      setPeriods(validPeriods);
 
       // Simular estadísticas para visualización
       setStats({

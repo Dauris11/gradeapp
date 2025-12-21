@@ -235,7 +235,9 @@ const Enrollments = () => {
       const [st, su, en] = await Promise.all([
         studentsAPI.getAll(), subjectsAPI.getAll(), enrollmentsAPI.getAll()
       ]);
-      setStudents(st); setSubjects(su); setEnrollments(en);
+      setStudents(Array.isArray(st) ? st : []);
+      setSubjects(Array.isArray(su) ? su : []);
+      setEnrollments(Array.isArray(en) ? en : []);
     } catch (err) { console.error(err); }
   };
 

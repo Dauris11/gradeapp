@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import {
-    User,
-    Calendar,
-    BookOpen,
-    Award,
-    TrendingUp,
-    Clock,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    Search,
-    Filter
+  User,
+  Calendar,
+  BookOpen,
+  Award,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Search,
+  Filter
 } from 'lucide-react';
 
 const Container = styled.div`
@@ -125,23 +125,23 @@ const StatusBadge = styled.div`
   padding: 4px 12px;
   border-radius: ${props => props.theme.borderRadius.full};
   background: ${props => {
-        switch (props.$status) {
-            case 'active': return props.theme.colors.success.main + '20';
-            case 'completed': return props.theme.colors.info.main + '20';
-            case 'withdrawn': return props.theme.colors.warning.main + '20';
-            case 'suspended': return props.theme.colors.danger.main + '20';
-            default: return props.theme.colors.slate[100];
-        }
-    }};
+    switch (props.$status) {
+      case 'active': return props.theme.colors.success.main + '20';
+      case 'completed': return props.theme.colors.info.main + '20';
+      case 'withdrawn': return props.theme.colors.warning.main + '20';
+      case 'suspended': return props.theme.colors.danger.main + '20';
+      default: return props.theme.colors.slate[100];
+    }
+  }};
   color: ${props => {
-        switch (props.$status) {
-            case 'active': return props.theme.colors.success.main;
-            case 'completed': return props.theme.colors.info.main;
-            case 'withdrawn': return props.theme.colors.warning.main;
-            case 'suspended': return props.theme.colors.danger.main;
-            default: return props.theme.colors.text.secondary;
-        }
-    }};
+    switch (props.$status) {
+      case 'active': return props.theme.colors.success.main;
+      case 'completed': return props.theme.colors.info.main;
+      case 'withdrawn': return props.theme.colors.warning.main;
+      case 'suspended': return props.theme.colors.danger.main;
+      default: return props.theme.colors.text.secondary;
+    }
+  }};
   font-size: ${props => props.theme.typography.fontSize.xs};
   font-weight: ${props => props.theme.typography.fontWeight.bold};
   text-transform: uppercase;
@@ -238,158 +238,159 @@ const EmptyState = styled.div`
 `;
 
 const StudentHistory = () => {
-    const [students, setStudents] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(true);
+  const [students, setStudents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        loadStudents();
-    }, []);
+  useEffect(() => {
+    loadStudents();
+  }, []);
 
-    const loadStudents = async () => {
-        try {
-            const response = await fetch('http://localhost:3001/api/academic/students/all-time');
-            const data = await response.json();
+  const loadStudents = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/academic/students/all-time');
+      const data = await response.json();
 
-            // Cargar historial de cada estudiante
-            const studentsWithHistory = await Promise.all(
-                data.map(async (student) => {
-                    const historyResponse = await fetch(`http://localhost:3001/api/academic/students/${student.id}/history`);
-                    const history = await historyResponse.json();
-                    return { ...student, history };
-                })
-            );
+      const validData = Array.isArray(data) ? data : [];
+      // Cargar historial de cada estudiante
+      const studentsWithHistory = await Promise.all(
+        validData.map(async (student) => {
+          const historyResponse = await fetch(`http://localhost:3001/api/academic/students/${student.id}/history`);
+          const history = await historyResponse.json();
+          return { ...student, history: Array.isArray(history) ? history : [] };
+        })
+      );
 
-            setStudents(studentsWithHistory);
-        } catch (error) {
-            console.error('Error cargando estudiantes:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+      setStudents(studentsWithHistory);
+    } catch (error) {
+      console.error('Error cargando estudiantes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const filteredStudents = students.filter(student =>
-        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.matricula.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const filteredStudents = students.filter(student =>
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.matricula.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-    const getInitials = (name) => {
-        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-    };
+  const getInitials = (name) => {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
 
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'active': return <CheckCircle size={12} />;
-            case 'completed': return <Award size={12} />;
-            case 'withdrawn': return <AlertCircle size={12} />;
-            case 'suspended': return <XCircle size={12} />;
-            default: return <Clock size={12} />;
-        }
-    };
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'active': return <CheckCircle size={12} />;
+      case 'completed': return <Award size={12} />;
+      case 'withdrawn': return <AlertCircle size={12} />;
+      case 'suspended': return <XCircle size={12} />;
+      default: return <Clock size={12} />;
+    }
+  };
 
-    const getStatusLabel = (status) => {
-        switch (status) {
-            case 'active': return 'Activo';
-            case 'completed': return 'Completado';
-            case 'withdrawn': return 'Retirado';
-            case 'suspended': return 'Suspendido';
-            default: return status;
-        }
-    };
+  const getStatusLabel = (status) => {
+    switch (status) {
+      case 'active': return 'Activo';
+      case 'completed': return 'Completado';
+      case 'withdrawn': return 'Retirado';
+      case 'suspended': return 'Suspendido';
+      default: return status;
+    }
+  };
 
-    return (
-        <Container>
-            <Header>
-                <Title>Historial de Estudiantes</Title>
-                <Subtitle>Registro completo de todos los estudiantes que han cursado en la institución</Subtitle>
-            </Header>
+  return (
+    <Container>
+      <Header>
+        <Title>Historial de Estudiantes</Title>
+        <Subtitle>Registro completo de todos los estudiantes que han cursado en la institución</Subtitle>
+      </Header>
 
-            <SearchBar>
-                <Search size={20} color={props => props.theme.colors.text.muted} />
-                <SearchInput
-                    type="text"
-                    placeholder="Buscar por nombre o matrícula..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </SearchBar>
+      <SearchBar>
+        <Search size={20} color={props => props.theme.colors.text.muted} />
+        <SearchInput
+          type="text"
+          placeholder="Buscar por nombre o matrícula..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </SearchBar>
 
-            <StudentsGrid>
-                {filteredStudents.length > 0 ? (
-                    filteredStudents.map((student, index) => (
-                        <StudentCard
-                            key={student.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <StudentHeader>
-                                <StudentAvatar>
-                                    {getInitials(student.name)}
-                                </StudentAvatar>
-                                <StudentInfo>
-                                    <StudentName>{student.name}</StudentName>
-                                    <StudentMatricula>{student.matricula}</StudentMatricula>
-                                </StudentInfo>
-                                <StatusBadge $status={student.status}>
-                                    {getStatusIcon(student.status)}
-                                    {getStatusLabel(student.status)}
-                                </StatusBadge>
-                            </StudentHeader>
+      <StudentsGrid>
+        {filteredStudents.length > 0 ? (
+          filteredStudents.map((student, index) => (
+            <StudentCard
+              key={student.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <StudentHeader>
+                <StudentAvatar>
+                  {getInitials(student.name)}
+                </StudentAvatar>
+                <StudentInfo>
+                  <StudentName>{student.name}</StudentName>
+                  <StudentMatricula>{student.matricula}</StudentMatricula>
+                </StudentInfo>
+                <StatusBadge $status={student.status}>
+                  {getStatusIcon(student.status)}
+                  {getStatusLabel(student.status)}
+                </StatusBadge>
+              </StudentHeader>
 
-                            <StudentStats>
-                                <StatItem>
-                                    <StatLabel>Períodos Cursados</StatLabel>
-                                    <StatValue>{student.periodsAttended || 0}</StatValue>
-                                </StatItem>
-                                <StatItem>
-                                    <StatLabel>Último Período</StatLabel>
-                                    <StatValue>{student.lastPeriod || 'N/A'}</StatValue>
-                                </StatItem>
-                            </StudentStats>
+              <StudentStats>
+                <StatItem>
+                  <StatLabel>Períodos Cursados</StatLabel>
+                  <StatValue>{student.periodsAttended || 0}</StatValue>
+                </StatItem>
+                <StatItem>
+                  <StatLabel>Último Período</StatLabel>
+                  <StatValue>{student.lastPeriod || 'N/A'}</StatValue>
+                </StatItem>
+              </StudentStats>
 
-                            {student.history && student.history.length > 0 && (
-                                <PeriodsTimeline>
-                                    <TimelineTitle>Historial Académico</TimelineTitle>
-                                    <TimelineItems>
-                                        {student.history.slice(0, 3).map((record) => (
-                                            <TimelineItem key={record.id}>
-                                                <TimelineDot />
-                                                <span>{record.periodName}</span>
-                                                {record.averageGrade && (
-                                                    <span style={{ marginLeft: 'auto', fontWeight: 600 }}>
-                                                        {record.averageGrade.toFixed(1)}
-                                                    </span>
-                                                )}
-                                            </TimelineItem>
-                                        ))}
-                                        {student.history.length > 3 && (
-                                            <TimelineItem>
-                                                <span style={{ fontSize: '11px', fontStyle: 'italic' }}>
-                                                    +{student.history.length - 3} períodos más
-                                                </span>
-                                            </TimelineItem>
-                                        )}
-                                    </TimelineItems>
-                                </PeriodsTimeline>
-                            )}
-                        </StudentCard>
-                    ))
-                ) : (
-                    <EmptyState>
-                        <User size={64} />
-                        <h3>No se encontraron estudiantes</h3>
-                        <p>
-                            {searchTerm
-                                ? 'Intenta con otro término de búsqueda'
-                                : 'Aún no hay estudiantes registrados en el sistema'
-                            }
-                        </p>
-                    </EmptyState>
-                )}
-            </StudentsGrid>
-        </Container>
-    );
+              {student.history && student.history.length > 0 && (
+                <PeriodsTimeline>
+                  <TimelineTitle>Historial Académico</TimelineTitle>
+                  <TimelineItems>
+                    {student.history.slice(0, 3).map((record) => (
+                      <TimelineItem key={record.id}>
+                        <TimelineDot />
+                        <span>{record.periodName}</span>
+                        {record.averageGrade && (
+                          <span style={{ marginLeft: 'auto', fontWeight: 600 }}>
+                            {record.averageGrade.toFixed(1)}
+                          </span>
+                        )}
+                      </TimelineItem>
+                    ))}
+                    {student.history.length > 3 && (
+                      <TimelineItem>
+                        <span style={{ fontSize: '11px', fontStyle: 'italic' }}>
+                          +{student.history.length - 3} períodos más
+                        </span>
+                      </TimelineItem>
+                    )}
+                  </TimelineItems>
+                </PeriodsTimeline>
+              )}
+            </StudentCard>
+          ))
+        ) : (
+          <EmptyState>
+            <User size={64} />
+            <h3>No se encontraron estudiantes</h3>
+            <p>
+              {searchTerm
+                ? 'Intenta con otro término de búsqueda'
+                : 'Aún no hay estudiantes registrados en el sistema'
+              }
+            </p>
+          </EmptyState>
+        )}
+      </StudentsGrid>
+    </Container>
+  );
 };
 
 export default StudentHistory;

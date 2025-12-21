@@ -258,9 +258,9 @@ const Dashboard = () => {
           enrollmentsAPI.getAll()
         ]);
         setStats({
-          students: s.length,
-          subjects: sub.length,
-          enrollments: e.length,
+          students: Array.isArray(s) ? s.length : 0,
+          subjects: Array.isArray(sub) ? sub.length : 0,
+          enrollments: Array.isArray(e) ? e.length : 0,
           avg: 88.4
         });
       } catch (err) { console.error(err); }
