@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
@@ -134,8 +135,33 @@ process.env.DB_PATH_CUSTOM = dbPath;
 process.env.WHATSAPP_SESSION_PATH = whatsappSessionPath;
 process.env.USER_DATA_PATH = userDataPath; // Para otros archivos como email-config.json
 
+// Función para asegurar que la base de datos exista
+function ensureDatabaseExists(targetPath) {
+    try {
+        if (fs.existsSync(targetPath)) return; // Ya existe
+
+        console.log('📦 Inicializando base de datos por primera vez...');
+        
+        let sourceDbPath = path.join(__dirname, '../backend/grade_manager.db');
+        
+        // Verificar si existe la fuente
+        if (fs.existsSync(sourceDbPath)) {
+            // Copiar
+            fs.copyFileSync(sourceDbPath, targetPath);
+            console.log('✅ Base de datos inicial copiada exitosamente a:', targetPath);
+        } else {
+            console.warn('⚠️ No se encontró la base de datos plantilla en:', sourceDbPath);
+        }
+    } catch (error) {
+        console.error('❌ Error copiando base de datos inicial:', error);
+    }
+}
+
 let backendServer;
 try {
+    // Asegurar DB antes de cargar el backend (que intenta abrirla)
+    if (dbPath) ensureDatabaseExists(dbPath);
+
     // Importar backend directamente (se ejecuta en el proceso principal)
     // Esto asegura que compartan node_modules y evita problemas de rutas/forks
     backendServer = require('../backend/server.js');
