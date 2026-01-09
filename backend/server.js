@@ -5,6 +5,9 @@ const whatsappService = require('./whatsappServiceFree');
 const QRCode = require('qrcode');
 const academicPeriodsRoutes = require('./academicPeriodsRoutes');
 const calendarRoutes = require('./calendarRoutes');
+const attendanceRoutes = require('./attendanceRoutes');
+const analyticsRoutes = require('./analyticsRoutes');
+const settingsRoutes = require('./settingsRoutes');
 
 const app = express();
 const PORT = 3001;
@@ -48,22 +51,45 @@ app.use('/api/academic', academicPeriodsRoutes);
 // Rutas de calendario y notificaciones
 app.use('/api/calendar', calendarRoutes);
 
+// Rutas de asistencia
+app.use('/api/attendance', attendanceRoutes);
+
+// Rutas de analítica
+app.use('/api/analytics', analyticsRoutes);
+
+// Rutas de configuración
+app.use('/api/settings', settingsRoutes);
+
 // ==================== RUTAS DE AUTENTICACIÓN ====================
 app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;
     
-    const user = db.prepare('SELECT * FROM users WHERE username = ? AND password = ?').get(username, password);
+    let user = db.prepare('SELECT * FROM users WHERE username = ? AND password = ?').get(username, password);
     
     if (user) {
-        // Actualizar último login
         db.prepare('UPDATE users SET lastLogin = ? WHERE id = ?').run(new Date().toISOString(), user.id);
-        
-        // No enviar password en la respuesta
         const { password: _, ...userWithoutPassword } = user;
-        res.json({ success: true, user: userWithoutPassword });
-    } else {
-        res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
+        return res.json({ success: true, user: userWithoutPassword, type: 'staff' });
     }
+
+    // Probar login como estudiante (username = matricula, password = password o matricula si es null)
+    let student = db.prepare('SELECT * FROM students WHERE matricula = ?').get(username);
+    if (student) {
+        const expectedPass = student.password || student.matricula;
+        if (password === expectedPass) {
+             const userObj = {
+                 id: student.id,
+                 username: student.matricula,
+                 fullName: student.name,
+                 email: student.email,
+                 role: 'student',
+                 matricula: student.matricula
+             };
+             return res.json({ success: true, user: userObj, type: 'student' });
+        }
+    }
+
+    res.status(401).json({ success: false, message: 'Usuario o contraseña incorrectos' });
 });
 
 app.post('/api/auth/reset-password', (req, res) => {
@@ -274,6 +300,39 @@ app.post('/api/students', (req, res) => {
     }
 });
 
+// Importación masiva de estudiantes
+app.post('/api/students/import', (req, res) => {
+    const { students } = req.body;
+    const year = new Date().getFullYear();
+    
+    try {
+        const getNextMatricula = () => {
+            const maxSeq = db.prepare(`
+                SELECT MAX(CAST(SUBSTR(matricula, 7) AS INTEGER)) as maxSeq 
+                FROM students 
+                WHERE matricula LIKE ?
+            `).get(`GE${year}%`);
+            return (maxSeq?.maxSeq || 0) + 1;
+        };
+
+        const insert = db.transaction((rows) => {
+            let nextSeq = getNextMatricula();
+            for (const row of rows) {
+                const matricula = `GE${year}${String(nextSeq++).padStart(4, '0')}`;
+                db.prepare(`
+                    INSERT INTO students (matricula, name, email, phone, year, enrollmentDate)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                `).run(matricula, row.name, row.email, row.phone, year, new Date().toISOString());
+            }
+        });
+
+        insert(students);
+        res.json({ success: true, count: students.length });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
 app.put('/api/students/:id', (req, res) => {
     const { name, email, phone } = req.body;
     db.prepare('UPDATE students SET name = ?, email = ?, phone = ? WHERE id = ?')
@@ -398,6 +457,39 @@ app.post('/api/grades', (req, res) => {
     `).run(enrollmentId, studentId, componentId, componentName, type, name, score, maxScore || 100, date || new Date().toISOString(), notes);
     
     const grade = db.prepare('SELECT * FROM grades WHERE id = ?').get(result.lastInsertRowid);
+
+    // Alerta de rendimiento bajo (Automatización)
+    try {
+        const alertsE = db.prepare("SELECT value FROM settings WHERE key = 'alerts_enabled'").get();
+        const thresholdS = db.prepare("SELECT value FROM settings WHERE key = 'low_score_threshold'").get();
+        const alertsEnabled = alertsE?.value === 'true';
+        const threshold = parseFloat(thresholdS?.value || '70');
+
+        if (alertsEnabled && score < threshold) {
+            const student = db.prepare('SELECT * FROM students WHERE id = ?').get(studentId);
+            if (student && (student.phone || student.email)) {
+                const message = `⚠️ Alerta de Rendimiento: El estudiante ${student.name} ha obtenido una calificación de ${score}/${maxScore || 100} en ${name} (${componentName}). Se recomienda seguimiento presencial.`;
+                
+                // Enviar WhatsApp si hay teléfono
+                if (student.phone) {
+                    whatsappService.sendWhatsAppMessage(student.phone, message).catch(console.error);
+                }
+                
+                // Enviar Email si hay correo
+                if (student.email) {
+                    emailService.sendEmail({
+                        to: student.email,
+                        subject: 'Alerta de Rendimiento Académico',
+                        body: message,
+                        type: 'alert'
+                    }).catch(console.error);
+                }
+            }
+        }
+    } catch (alertError) {
+        console.error('Error enviando alerta automática:', alertError);
+    }
+
     res.json(grade);
 });
 
@@ -412,6 +504,28 @@ app.put('/api/grades/:id', (req, res) => {
 app.delete('/api/grades/:id', (req, res) => {
     db.prepare('DELETE FROM grades WHERE id = ?').run(req.params.id);
     res.json({ success: true });
+});
+
+// ==================== RUTAS DEL PORTAL ESTUDIANTE ====================
+app.get('/api/portal/student/:id', (req, res) => {
+    try {
+        const studentId = req.params.id;
+        const student = db.prepare('SELECT id, matricula, name, email FROM students WHERE id = ?').get(studentId);
+        if (!student) return res.status(404).json({ error: 'Estudiante no encontrado' });
+
+        const enrollments = db.prepare('SELECT * FROM enrollments WHERE studentId = ?').all(studentId);
+        const grades = db.prepare('SELECT * FROM grades WHERE studentId = ?').all(studentId);
+        const attendance = db.prepare('SELECT * FROM attendance WHERE studentId = ?').all(studentId);
+
+        res.json({
+            student,
+            enrollments,
+            grades,
+            attendance
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // ==================== RUTAS DE EMAIL ====================

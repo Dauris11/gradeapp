@@ -21,7 +21,7 @@ import {
     ChevronRight,
     ArrowUpRight
 } from 'lucide-react';
-import { subjectsAPI, enrollmentsAPI, gradesAPI, studentsAPI } from '../services/database';
+import { studentsAPI, subjectsAPI, enrollmentsAPI, gradesAPI, academicAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
 import ComponentsConfigurator from '../components/ComponentsConfigurator';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -339,6 +339,11 @@ const ModalContent = styled(motion.div)`
   overflow-y: auto;
   padding: 40px;
   position: relative;
+
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    padding: 24px;
+    border-radius: 20px;
+  }
 `;
 
 const ModalHeaderWrapper = styled.div`
@@ -358,6 +363,16 @@ const FormGroup = styled.div`
   flex-direction: column;
   gap: 8px;
   label { font-size: 13px; font-weight: 600; color: ${props => props.theme.colors.slate[700]}; }
+`;
+
+const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: ${props => props.cols || '1fr 1fr'};
+  gap: 16px;
+
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Input = styled.input`
@@ -444,19 +459,19 @@ const Subjects = () => {
             const combinedSubjects = Array.isArray(allSubjects) ? allSubjects : [];
             const combinedEnrollments = Array.isArray(enrollments) ? enrollments : [];
 
-            const enrichedSubjects = combinedSubjects.map(subject => {
+            const enrichedSubjects = await Promise.all(combinedSubjects.map(async subject => {
                 const subjectEnrollments = combinedEnrollments.filter(e => e.subjectId === subject.id);
-                const studentsWithGrades = subjectEnrollments.map(enrollment => {
-                    const accumulated = gradesAPI.calculateAccumulated ? gradesAPI.calculateAccumulated(enrollment.id) : null;
+                const studentsWithGrades = await Promise.all(subjectEnrollments.map(async enrollment => {
+                    const accumulated = gradesAPI.calculateAccumulated ? await gradesAPI.calculateAccumulated(enrollment.id) : null;
                     return {
                         enrollmentId: enrollment.id,
                         studentId: enrollment.studentId,
                         studentName: enrollment.studentName,
                         accumulated: accumulated?.accumulated || null
                     };
-                });
+                }));
                 return { ...subject, students: studentsWithGrades };
-            });
+            }));
             setSubjects(enrichedSubjects);
         } catch (error) {
             toast.error(t('common.error'), t('common.error'));
@@ -465,8 +480,7 @@ const Subjects = () => {
 
     const loadPeriods = async () => {
         try {
-            const response = await fetch('http://localhost:3001/api/academic/periods');
-            const data = await response.json();
+            const data = await academicAPI.getAllPeriods();
             const validData = Array.isArray(data) ? data : [];
             setPeriods(validData);
 
@@ -767,7 +781,7 @@ const Subjects = () => {
                             </ModalHeaderWrapper>
 
                             <Form onSubmit={handleSubmit}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+                                <FormRow cols="2fr 1fr">
                                     <FormGroup>
                                         <label>Nombre de la Materia</label>
                                         <Input
@@ -798,9 +812,9 @@ const Subjects = () => {
                                             }}
                                         />
                                     </FormGroup>
-                                </div>
+                                </FormRow>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                                <FormRow>
                                     <FormGroup>
                                         <label>Docente</label>
                                         <Input
@@ -819,7 +833,7 @@ const Subjects = () => {
                                             required
                                         />
                                     </FormGroup>
-                                </div>
+                                </FormRow>
 
                                 <FormGroup>
                                     <label>Horario</label>

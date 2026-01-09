@@ -1,9 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sun, Moon, Monitor } from 'lucide-react';
+import { X, Sun, Moon, Monitor, Save, Bell, Percent, ChevronRight, ChevronDown } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import LanguageSelector from './LanguageSelector';
+import { useLanguage } from '../i18n/LanguageContext';
+import { settingsAPI } from '../services/database';
+import { Toast, useToast } from './Toast';
 
 const Modal = styled(motion.div)`
   position: fixed;
@@ -21,11 +24,18 @@ const ModalContent = styled(motion.div)`
   background: ${props => props.theme.colors.surface};
   border-radius: 28px;
   width: 100%;
-  max-width: 480px;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 40px;
   position: relative;
   box-shadow: ${props => props.theme.shadows.xl};
   border: 1px solid ${props => props.theme.colors.border};
+
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    padding: 24px;
+    border-radius: 20px;
+  }
 `;
 
 const Header = styled.div`
@@ -200,8 +210,131 @@ const ColorLabel = styled.span`
   letter-spacing: 0.05em;
 `;
 
+const Input = styled.input`
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid ${props => props.theme.colors.border};
+  background: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text.primary};
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary.main};
+    box-shadow: 0 0 0 3px ${props => props.theme.colors.primary.main}20;
+  }
+`;
+
+const Toggle = styled.button`
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: ${props => props.$active ? props.theme.colors.primary.main : props.theme.colors.slate[300]};
+  position: relative;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: ${props => props.$active ? '22px' : '2px'};
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+  }
+`;
+
+const AccordionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: ${props => props.theme.colors.slate[50]};
+  border-radius: 12px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${props => props.theme.colors.slate[100]};
+  }
+`;
+
+const MainButton = styled.button`
+  width: ${props => props.fullWidth ? '100%' : 'auto'};
+  background: ${props => props.theme.colors.gradients.primary};
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: ${props => props.theme.shadows.md};
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: ${props => props.theme.shadows.lg};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
 const SettingsModal = ({ isOpen, onClose }) => {
   const { themeMode, setTheme, theme } = useTheme();
+  const { t } = useLanguage();
+  const toast = useToast();
+
+  const [loading, setLoading] = React.useState(false);
+  const [gradingRanges, setGradingRanges] = React.useState([]);
+  const [alertsEnabled, setAlertsEnabled] = React.useState(true);
+  const [threshold, setThreshold] = React.useState(70);
+  const [expanded, setExpanded] = React.useState(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetchSettings();
+    }
+  }, [isOpen]);
+
+  const fetchSettings = async () => {
+    try {
+      const settings = await settingsAPI.getAll();
+      if (settings.grading_ranges) setGradingRanges(settings.grading_ranges);
+      if (settings.alerts_enabled !== undefined) setAlertsEnabled(settings.alerts_enabled);
+      if (settings.low_score_threshold) setThreshold(settings.low_score_threshold);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleSaveSettings = async () => {
+    setLoading(true);
+    try {
+      await settingsAPI.updateBulk([
+        { key: 'grading_ranges', value: gradingRanges },
+        { key: 'alerts_enabled', value: alertsEnabled },
+        { key: 'low_score_threshold', value: threshold }
+      ]);
+      toast.success('Configuraciones guardadas');
+    } catch (e) {
+      toast.error('Error al guardar');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -220,7 +353,6 @@ const SettingsModal = ({ isOpen, onClose }) => {
     }
   ];
 
-  // Colores del tema actual
   const previewColors = [
     { color: theme.colors.primary.main, label: 'Principal' },
     { color: theme.colors.secondary.main, label: 'Secundario' },
@@ -242,8 +374,9 @@ const SettingsModal = ({ isOpen, onClose }) => {
         exit={{ scale: 0.9, opacity: 0 }}
         onClick={e => e.stopPropagation()}
       >
+        <Toast toasts={toast.toasts} removeToast={toast.removeToast} />
         <Header>
-          <Title>⚙️ Configuración</Title>
+          <Title>⚙️ {t('settings.title')}</Title>
           <CloseButton onClick={onClose}>
             <X size={20} />
           </CloseButton>
@@ -280,11 +413,92 @@ const SettingsModal = ({ isOpen, onClose }) => {
         </Section>
 
         <Section>
-          <SectionTitle>Idioma / Language / Lang</SectionTitle>
+          <SectionTitle>{t('settings.language')}</SectionTitle>
           <LanguageSelector />
         </Section>
 
         <Section>
+          <AccordionHeader onClick={() => setExpanded(expanded === 'grading' ? null : 'grading')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Percent size={20} color={theme.colors.primary.main} />
+              <span style={{ fontWeight: '700' }}>Rango de Letras Personalizable</span>
+            </div>
+            {expanded === 'grading' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+          </AccordionHeader>
+
+          {expanded === 'grading' && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} style={{ padding: '0 8px', overflow: 'hidden' }}>
+              <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '16px' }}>Define los límites para la conversión de notas numéricas a letras.</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {gradingRanges.map((range, idx) => (
+                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '50px 1fr 1fr 1fr', gap: '8px', alignItems: 'center' }}>
+                    <Input value={range.letter} onChange={e => {
+                      const newRanges = [...gradingRanges];
+                      newRanges[idx].letter = e.target.value.toUpperCase();
+                      setGradingRanges(newRanges);
+                    }} style={{ fontWeight: 'bold', textAlign: 'center' }} />
+                    <Input type="number" value={range.min} onChange={e => {
+                      const newRanges = [...gradingRanges];
+                      newRanges[idx].min = parseFloat(e.target.value);
+                      setGradingRanges(newRanges);
+                    }} placeholder="Mín" />
+                    <Input type="number" value={range.max} onChange={e => {
+                      const newRanges = [...gradingRanges];
+                      newRanges[idx].max = parseFloat(e.target.value);
+                      setGradingRanges(newRanges);
+                    }} placeholder="Máx" />
+                    <Input value={range.description} onChange={e => {
+                      const newRanges = [...gradingRanges];
+                      newRanges[idx].description = e.target.value;
+                      setGradingRanges(newRanges);
+                    }} placeholder="Descripción" />
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </Section>
+
+        <Section>
+          <AccordionHeader onClick={() => setExpanded(expanded === 'alerts' ? null : 'alerts')}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Bell size={20} color={theme.colors.warning.main} />
+              <span style={{ fontWeight: '700' }}>Alertas de Rendimiento</span>
+            </div>
+            {expanded === 'alerts' ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+          </AccordionHeader>
+
+          {expanded === 'alerts' && (
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} style={{ padding: '16px 8px', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <div>
+                  <span style={{ fontWeight: '600', display: 'block' }}>Habilitar Alertas Automáticas</span>
+                  <span style={{ fontSize: '12px', color: '#64748B' }}>Envía WhatsApp/Email si la nota es baja.</span>
+                </div>
+                <Toggle $active={alertsEnabled} onClick={() => setAlertsEnabled(!alertsEnabled)} />
+              </div>
+
+              <div style={{ display: alertsEnabled ? 'block' : 'none' }}>
+                <label style={{ fontSize: '13px', fontWeight: '600', color: '#64748B', display: 'block', marginBottom: '8px' }}>Umbral de Alerta (Menor que X)</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Input type="number" value={threshold} onChange={e => setThreshold(e.target.value)} style={{ width: '80px' }} />
+                  <span style={{ fontSize: '13px', color: '#64748B' }}>Puntos (Ej: Alerta si saca menos de 70)</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </Section>
+
+        <MainButton
+          fullWidth
+          onClick={handleSaveSettings}
+          disabled={loading}
+          style={{ marginTop: '20px', borderRadius: '16px' }}
+        >
+          {loading ? 'Guardando...' : <><Save size={18} /> Guardar Configuraciones Avanzadas</>}
+        </MainButton>
+
+        <Section style={{ marginTop: '40px' }}>
           <PreviewSection>
             <PreviewTitle>Paleta de Colores Actual</PreviewTitle>
             <PreviewColors>

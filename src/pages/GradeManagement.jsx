@@ -99,6 +99,22 @@ const CardContent = styled.div`
   padding: 32px;
 `;
 
+const FilterSection = styled.div`
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 40px;
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  @media (max-width: 640px) {
+    flex-direction: column;
+    gap: 20px;
+  }
+`;
+
 const CardHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -311,8 +327,15 @@ const ModalContent = styled(motion.div)`
   border-radius: 28px;
   width: 100%;
   max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 40px;
   position: relative;
+
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    padding: 24px;
+    border-radius: 20px;
+  }
 `;
 
 const Form = styled.form`
@@ -374,10 +397,11 @@ const GradeManagement = () => {
 
     const loadData = async () => {
         try {
+            const allEnrollments = await enrollmentsAPI.getAll();
             const validEnrollments = Array.isArray(allEnrollments) ? allEnrollments : [];
             const enriched = await Promise.all(validEnrollments.map(async enrollment => {
                 const grades = await gradesAPI.getByEnrollment(enrollment.id);
-                const accumulated = gradesAPI.calculateAccumulated ? gradesAPI.calculateAccumulated(enrollment.id) : null;
+                const accumulated = gradesAPI.calculateAccumulated ? await gradesAPI.calculateAccumulated(enrollment.id) : null;
                 return { ...enrollment, grades: grades || [], accumulated };
             }));
             setEnrollments(enriched);

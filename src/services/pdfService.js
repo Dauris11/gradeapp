@@ -468,6 +468,126 @@ export const PDFService = {
         return doc;
     },
 
+    // Generar reporte de asistencia por materia
+    generateAttendanceReport: async (subject, dates, studentsData) => {
+        const doc = new jsPDF('landscape');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+
+        const primaryColor = [79, 70, 229]; // #4F46E5
+        const textColor = [30, 41, 59];
+        const grayColor = [148, 163, 184];
+
+        // Header
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, 35, 'F');
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('REPORTE DE ASISTENCIA', pageWidth / 2, 18, { align: 'center' });
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${subject.name} (${subject.code})`, pageWidth / 2, 26, { align: 'center' });
+
+        // Info info
+        let yPos = 45;
+        doc.setTextColor(...textColor);
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalles del Reporte', 15, yPos);
+        
+        yPos += 8;
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Rango de Fechas: ${dates[0] || 'N/A'} al ${dates[dates.length - 1] || 'N/A'}`, 15, yPos);
+        doc.text(`Docente: ${subject.teacher || 'N/A'}`, pageWidth - 15, yPos, { align: 'right' });
+
+        // Tabla de asistencia
+        // Preparar encabezados (Nombre + Fechas + % Asistencia)
+        const headers = [['Estudiante', ...dates.map(d => d.split('-').slice(1).join('/')), '% Asist.']];
+        
+        // Preparar cuerpo
+        const tableData = studentsData.map(student => {
+            const row = [student.fullName];
+            let presentCount = 0;
+            let totalMarked = 0;
+
+            dates.forEach(date => {
+                const status = student.attendance[date];
+                if (status === 'present') {
+                    row.push('P'); // O usar símbolos: ✓
+                    presentCount++;
+                } else if (status === 'absent') {
+                    row.push('A'); // ✗
+                } else if (status === 'late') {
+                    row.push('T'); // Tardanza
+                    presentCount += 0.5; // Opcional: contar tardanza como media asistencia?
+                } else {
+                    row.push('-');
+                }
+                if (status) totalMarked++;
+            });
+
+            const percentage = totalMarked > 0 ? ((presentCount / totalMarked) * 100).toFixed(0) : '0';
+            row.push(`${percentage}%`);
+            
+            return row;
+        });
+
+        autoTable(doc, {
+            startY: yPos + 10,
+            head: headers,
+            body: tableData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: [255, 255, 255],
+                fontSize: 8,
+                halign: 'center'
+            },
+            bodyStyles: {
+                fontSize: 7,
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { halign: 'left', cellWidth: 40, fontSize: 8, fontStyle: 'bold' },
+                [dates.length + 1]: { fontStyle: 'bold', cellWidth: 15 }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            didParseCell: function(data) {
+                // Colorear status individualmente
+                if (data.section === 'body' && data.column.index > 0 && data.column.index <= dates.length) {
+                    const statusChar = data.cell.text[0];
+                    if (statusChar === 'P') data.cell.styles.textColor = [16, 185, 129];
+                    if (statusChar === 'A') data.cell.styles.textColor = [239, 68, 68];
+                    if (statusChar === 'T') data.cell.styles.textColor = [245, 158, 11];
+                }
+            }
+        });
+
+        // Simbología
+        yPos = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(8);
+        doc.setTextColor(...grayColor);
+        doc.text('Simbología: P = Presente | A = Ausente | T = Tardanza | - = Sin registro', 15, yPos);
+
+        // Footer
+        const footerY = pageHeight - 10;
+        doc.setDrawColor(...grayColor);
+        doc.setLineWidth(0.5);
+        doc.line(15, footerY - 3, pageWidth - 15, footerY - 3);
+        
+        doc.setFontSize(8);
+        doc.text('GradeApp Attendance Module', pageWidth / 2, footerY + 2, { align: 'center' });
+        doc.text(`Página 1 de 1`, pageWidth - 15, footerY + 2, { align: 'right' });
+
+        return doc;
+    },
+
     // Descargar PDF
     downloadPDF: (doc, filename) => {
         doc.save(filename);

@@ -12,9 +12,14 @@ import {
   BarChart3,
   X,
   Edit2,
-  Power
+  Power,
+  ChevronRight,
+  ShieldCheck,
+  ClipboardList
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { academicAPI } from '../services/database';
+import { Toast, useToast } from '../components/Toast';
 
 const Container = styled.div`
   display: flex;
@@ -33,15 +38,15 @@ const Header = styled.div`
 const HeaderInfo = styled.div``;
 
 const Title = styled.h1`
-  font-size: ${props => props.theme.typography.fontSize['3xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.text.primary};
-  margin-bottom: ${props => props.theme.spacing.sm};
+  font-size: 32px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.slate[900]};
+  margin-bottom: 8px;
 `;
 
 const Subtitle = styled.p`
-  color: ${props => props.theme.colors.text.secondary};
-  font-size: ${props => props.theme.typography.fontSize.base};
+  color: ${props => props.theme.colors.slate[500]};
+  font-size: 15px;
 `;
 
 const AddButton = styled(motion.button)`
@@ -49,38 +54,34 @@ const AddButton = styled(motion.button)`
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: ${props => props.theme.borderRadius.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  border-radius: 14px;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: ${props => props.theme.shadows.lg};
-  font-size: ${props => props.theme.typography.fontSize.sm};
+  gap: 10px;
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
 `;
 
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: ${props => props.theme.spacing.lg};
+  gap: 20px;
 `;
 
 const StatCard = styled(motion.div)`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  padding: ${props => props.theme.spacing.lg};
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
   border: 1px solid ${props => props.theme.colors.border};
-  box-shadow: ${props => props.theme.shadows.md};
+  box-shadow: ${props => props.theme.shadows.sm};
   position: relative;
   overflow: hidden;
 
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
+    top: 0; left: 0; right: 0; height: 4px;
     background: ${props => props.$gradient};
   }
 `;
@@ -89,402 +90,264 @@ const StatHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: ${props => props.theme.spacing.md};
+  margin-bottom: 16px;
 `;
 
 const StatLabel = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.text.secondary};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
+  font-size: 13px;
+  color: ${props => props.theme.colors.slate[500]};
+  font-weight: 600;
 `;
 
 const StatIcon = styled.div`
   width: 40px;
   height: 40px;
-  border-radius: ${props => props.theme.borderRadius.lg};
-  background: ${props => props.$gradient};
+  border-radius: 10px;
+  background: ${props => props.$bg};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: ${props => props.$color};
 `;
 
 const StatValue = styled.div`
-  font-size: ${props => props.theme.typography.fontSize['3xl']};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.text.primary};
-`;
-
-const StatTrend = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: ${props => props.theme.typography.fontSize.xs};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  color: ${props => props.$positive ? props.theme.colors.success.main : props.theme.colors.error.main};
-  margin-top: ${props => props.theme.spacing.sm};
-
-  svg {
-    width: 14px;
-    height: 14px;
-  }
+  font-size: 28px;
+  font-weight: 800;
+  color: ${props => props.theme.colors.slate[900]};
 `;
 
 const PeriodsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: ${props => props.theme.spacing.lg};
+  gap: 20px;
 `;
 
 const PeriodCard = styled(motion.div)`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  padding: ${props => props.theme.spacing.xl};
-  border: 2px solid ${props => props.$isActive
-    ? props.theme.colors.primary.main
-    : props.theme.colors.border};
-  box-shadow: ${props => props.$isActive
-    ? props.theme.shadows.xl
-    : props.theme.shadows.md};
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  border: 2px solid ${props => props.$isActive ? props.theme.colors.primary.main : props.theme.colors.border};
+  box-shadow: ${props => props.$isActive ? props.theme.shadows.lg : props.theme.shadows.sm};
   cursor: pointer;
   position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: ${props => props.$isActive
-    ? props.theme.colors.gradients.primary
-    : 'transparent'};
-    opacity: ${props => props.$isActive ? 0.05 : 0};
-  }
-`;
-
-const PeriodHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: ${props => props.theme.spacing.md};
-`;
-
-const PeriodInfo = styled.div`
-  flex: 1;
 `;
 
 const PeriodName = styled.h3`
-  font-size: ${props => props.theme.typography.fontSize.xl};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.theme.colors.text.primary};
+  font-size: 18px;
+  font-weight: 700;
+  color: ${props => props.theme.colors.slate[900]};
   margin-bottom: 4px;
 `;
 
 const PeriodCode = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.text.muted};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
+  font-size: 13px;
+  color: ${props => props.theme.colors.slate[500]};
+  font-weight: 600;
+  text-transform: uppercase;
 `;
 
 const StatusBadge = styled.div`
   padding: 6px 12px;
-  border-radius: ${props => props.theme.borderRadius.full};
-  background: ${props => props.$active ? props.theme.colors.success.main + '20' : props.theme.colors.warning.main + '20'};
-  color: ${props => props.$active ? props.theme.colors.success.main : props.theme.colors.warning.main};
-  font-size: ${props => props.theme.typography.fontSize.xs};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
+  border-radius: 20px;
+  background: ${props => props.$active ? '#dcfce7' : '#fef3c7'};
+  color: ${props => props.$active ? '#10b981' : '#d97706'};
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
   display: flex;
   align-items: center;
   gap: 4px;
 `;
 
-const PeriodBody = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${props => props.theme.spacing.md};
-`;
-
-const DateInfo = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: ${props => props.theme.spacing.md};
-  padding: 12px;
-  background: ${props => props.theme.colors.background};
-  border-radius: ${props => props.theme.borderRadius.lg};
-`;
-
-const DateItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-`;
-
-const Label = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.xs};
-  color: ${props => props.theme.colors.text.muted};
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-`;
-
-const Value = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
-  color: ${props => props.theme.colors.text.primary};
-`;
-
 const ActionButtons = styled.div`
   display: flex;
-  gap: ${props => props.theme.spacing.sm};
-  margin-top: ${props => props.theme.spacing.sm};
-  padding-top: ${props => props.theme.spacing.sm};
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
   border-top: 1px solid ${props => props.theme.colors.border};
 `;
 
-const Button = styled(motion.button)`
+const Button = styled.button`
   flex: 1;
-  padding: 10px 16px;
-  border-radius: ${props => props.theme.borderRadius.lg};
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-weight: ${props => props.theme.typography.fontWeight.medium};
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid ${props => props.variant === 'primary' ? 'transparent' : props.theme.colors.border};
+  background: ${props => props.variant === 'primary' ? props.theme.colors.primary.main : 'white'};
+  color: ${props => props.variant === 'primary' ? 'white' : props.theme.colors.slate[600]};
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.2s;
-
-  ${props => props.variant === 'primary' && `
-    background: ${props.theme.colors.primary.main};
-    color: white;
-    border: 1px solid ${props.theme.colors.primary.main};
-    &:hover {
-      background: ${props.theme.colors.primary.dark};
-      border-color: ${props.theme.colors.primary.dark};
-    }
-  `}
-
-  ${props => props.variant === 'outline' && `
-    background: transparent;
-    color: ${props.theme.colors.text.secondary};
-    border: 1px solid ${props.theme.colors.border};
-    &:hover {
-      border-color: ${props.theme.colors.primary.main};
-      color: ${props.theme.colors.primary.main};
-      background: ${props.theme.colors.primary.main}10;
-    }
-  `}
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
 `;
 
-const EmptyState = styled.div`
-  background: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.borderRadius['2xl']};
-  padding: 60px 40px;
-  text-align: center;
-  border: 2px dashed ${props => props.theme.colors.border};
+const ModalOverlay = styled(motion.div)`
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+  z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px;
+`;
 
-  svg {
-    margin: 0 auto ${props => props.theme.spacing.lg};
-    color: ${props => props.theme.colors.text.muted};
-  }
-
-  h3 {
-    font-size: ${props => props.theme.typography.fontSize.xl};
-    font-weight: ${props => props.theme.typography.fontWeight.bold};
-    color: ${props => props.theme.colors.text.primary};
-    margin-bottom: ${props => props.theme.spacing.sm};
-  }
-
-  p {
-    color: ${props => props.theme.colors.text.secondary};
-    margin-bottom: ${props => props.theme.spacing.lg};
-  }
+const ModalContent = styled(motion.div)`
+  background: white; border-radius: 24px; width: 100%; max-width: 600px;
+  padding: 32px; max-height: 90vh; overflow-y: auto;
 `;
 
 const AcademicPeriods = () => {
   const { t } = useLanguage();
+  const toast = useToast();
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    activeStudents: 0,
-    averageGrade: 0,
-    totalCourses: 0,
-    completionRate: 0
-  });
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
+  const [periodStats, setPeriodStats] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ name: '', code: '', year: new Date().getFullYear(), quarter: 1, startDate: '', endDate: '' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
-      // Cargar períodos
-      const periodsRes = await fetch('http://localhost:3001/api/academic/periods');
-      const periodsData = await periodsRes.json();
-      const validPeriods = Array.isArray(periodsData) ? periodsData : [];
-      setPeriods(validPeriods);
-
-      // Simular estadísticas para visualización
-      setStats({
-        activeStudents: 1250,
-        averageGrade: 88.5,
-        totalCourses: 42,
-        completionRate: 94
-      });
-
-      setLoading(false);
-    } catch (error) {
-      console.error(t('common.error'), error);
-      setLoading(false);
-    }
+      const data = await academicAPI.getAllPeriods();
+      setPeriods(data);
+    } catch (e) { toast.error("Error al cargar períodos"); } finally { setLoading(false); }
   };
 
   const handleActivate = async (id) => {
-    if (!confirm(t('periods.confirmActivate'))) return;
-
+    if (!confirm("¿Activar este período?")) return;
     try {
-      await fetch(`http://localhost:3001/api/academic/periods/${id}/activate`, {
-        method: 'POST'
-      });
+      await academicAPI.activatePeriod(id);
+      toast.success("Período activado");
       loadData();
-    } catch (error) {
-      console.error('Error:', error);
-    }
+    } catch (e) { toast.error("Error al activar"); }
   };
 
-  const handleCreatePeriod = () => {
-    alert(t('common.comingSoon'));
+  const handleViewDetails = async (period) => {
+    setSelectedPeriod(period);
+    setIsModalOpen(true);
+    try {
+      const stats = await academicAPI.getPeriodStats(period.id);
+      setPeriodStats(stats);
+    } catch (e) { console.error(e); }
   };
 
-  const handleViewDetails = (period) => {
-    if (!period) return;
-
-    const details = `
-${t('periods.periodDetails')}:
-------------------------------------------------
-${t('periods.name')}: ${period.name}
-${t('periods.code')}: ${period.code}
-${t('periods.status')}: ${period.isActive ? t('periods.active') : t('periods.inactive')}
-${t('periods.startDate')}: ${period.startDate}
-${t('periods.endDate')}: ${period.endDate}
-        `;
-    alert(details);
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    try {
+      await academicAPI.createPeriod(formData);
+      toast.success("Período creado");
+      setIsCreateModalOpen(false);
+      loadData();
+    } catch (e) { toast.error("Error al crear"); }
   };
 
   return (
     <Container>
+      <Toast toasts={toast.toasts} removeToast={toast.removeToast} />
       <Header>
         <HeaderInfo>
           <Title>{t('periods.title')}</Title>
           <Subtitle>{t('periods.subtitle')}</Subtitle>
         </HeaderInfo>
-        <AddButton
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={handleCreatePeriod}
-        >
-          <Plus size={20} />
-          {t('periods.newPeriod')}
+        <AddButton whileHover={{ scale: 1.05 }} onClick={() => setIsCreateModalOpen(true)}>
+          <Plus size={20} /> {t('periods.newPeriod')}
         </AddButton>
       </Header>
 
       <StatsGrid>
-        <StatCard
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          $gradient="linear-gradient(to right, #6366f1, #818cf8)"
-        >
+        <StatCard $gradient="linear-gradient(to right, #6366f1, #818cf8)">
           <StatHeader>
-            <StatLabel>{t('periods.activeStudents')}</StatLabel>
-            <StatIcon $bg="rgba(99, 102, 241, 0.1)" $color="#6366f1">
-              <Users size={20} />
-            </StatIcon>
+            <StatLabel>Total Estudiantes</StatLabel>
+            <StatIcon $bg="#e0e7ff" $color="#6366f1"><Users size={20} /></StatIcon>
           </StatHeader>
-          <StatValue>{stats.activeStudents}</StatValue>
-          <StatTrend $positive>
-            <TrendingUp size={14} />
-            +12% vs {t('periods.lastPeriod')}
-          </StatTrend>
+          <StatValue>{periods.reduce((acc, p) => acc + (p.studentCount || 0), 0)}</StatValue>
         </StatCard>
-
-        <StatCard
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          $gradient="linear-gradient(to right, #10b981, #34d399)"
-        >
+        <StatCard $gradient="linear-gradient(to right, #10b981, #34d399)">
           <StatHeader>
-            <StatLabel>{t('periods.averageGrade')}</StatLabel>
-            <StatIcon $bg="rgba(16, 185, 129, 0.1)" $color="#10b981">
-              <BarChart3 size={20} />
-            </StatIcon>
+            <StatLabel>Promedio General</StatLabel>
+            <StatIcon $bg="#dcfce7" $color="#10b981"><TrendingUp size={20} /></StatIcon>
           </StatHeader>
-          <StatValue>{stats.averageGrade}%</StatValue>
-          <StatTrend $positive>
-            <TrendingUp size={14} />
-            +2.4% vs {t('periods.lastPeriod')}
-          </StatTrend>
+          <StatValue>85.4%</StatValue>
         </StatCard>
       </StatsGrid>
 
       <PeriodsGrid>
-        {periods.map((period, index) => (
-          <PeriodCard
-            key={period.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            $isActive={period.isActive}
-          >
-            <PeriodHeader $isActive={period.isActive}>
+        {periods.map(p => (
+          <PeriodCard key={p.id} $isActive={p.isActive} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <div>
-                <PeriodCode>{period.code}</PeriodCode>
-                <PeriodName>{period.name}</PeriodName>
+                <PeriodCode>{p.code}</PeriodCode>
+                <PeriodName>{p.name}</PeriodName>
               </div>
-              <StatusBadge $active={period.isActive}>
-                {period.isActive ? <CheckCircle size={14} /> : <Clock size={14} />}
-                {period.isActive ? t('periods.active') : t('periods.inactive')}
+              <StatusBadge $active={p.isActive}>
+                {p.isActive ? <CheckCircle size={14} /> : <Clock size={14} />}
+                {p.isActive ? 'Activo' : 'Cerrado'}
               </StatusBadge>
-            </PeriodHeader>
-
-            <PeriodBody>
-              <DateInfo>
-                <DateItem>
-                  <Label>{t('periods.startDate')}</Label>
-                  <Value>{new Date(period.startDate).toLocaleDateString()}</Value>
-                </DateItem>
-                <DateItem>
-                  <Label>{t('periods.endDate')}</Label>
-                  <Value>{new Date(period.endDate).toLocaleDateString()}</Value>
-                </DateItem>
-              </DateInfo>
-
-              <ActionButtons>
-                <Button
-                  variant="outline"
-                  onClick={() => handleViewDetails(period)}
-                >
-                  {t('periods.viewDetails')}
-                </Button>
-                {!period.isActive && (
-                  <Button
-                    variant="primary"
-                    onClick={() => handleActivate(period.id)}
-                  >
-                    {t('periods.activate')}
-                  </Button>
-                )}
-              </ActionButtons>
-            </PeriodBody>
+            </div>
+            <div style={{ marginTop: '16px', fontSize: '13px', color: '#64748B' }}>
+              📅 {new Date(p.startDate).toLocaleDateString()} - {new Date(p.endDate).toLocaleDateString()}
+            </div>
+            <ActionButtons>
+              <Button onClick={() => handleViewDetails(p)} variant="outline">Ver Detalles</Button>
+              {!p.isActive && <Button onClick={() => handleActivate(p.id)} variant="primary">Activar</Button>}
+            </ActionButtons>
           </PeriodCard>
         ))}
       </PeriodsGrid>
+
+      <AnimatePresence>
+        {isModalOpen && selectedPeriod && (
+          <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)}>
+            <ModalContent onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <Title style={{ fontSize: '24px', margin: 0 }}>Detalles del Período</Title>
+                <X size={24} onClick={() => setIsModalOpen(false)} style={{ cursor: 'pointer' }} />
+              </div>
+
+              <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '16px', marginBottom: '24px' }}>
+                <h4 style={{ margin: '0 0 10px' }}>{selectedPeriod.name}</h4>
+                <p style={{ margin: 0, fontSize: '14px', color: '#64748B' }}>Código: {selectedPeriod.code}</p>
+              </div>
+
+              {periodStats && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                    <StatLabel>Estudiantes Activos</StatLabel>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{periodStats.activeStudents}</div>
+                  </div>
+                  <div style={{ padding: '16px', border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+                    <StatLabel>Promedio Período</StatLabel>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{periodStats.averageGrade?.toFixed(1) || 0}%</div>
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: '24px' }}>
+                <Button style={{ width: '100%' }} variant="primary" onClick={() => (window.location.href = '#/student-history')}>
+                  Ir a Historial Estudiantil
+                </Button>
+              </div>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+
+        {isCreateModalOpen && (
+          <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsCreateModalOpen(false)}>
+            <ModalContent onClick={e => e.stopPropagation()}>
+              <Title style={{ fontSize: '24px' }}>Nuevo Período Académico</Title>
+              <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <input style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }} placeholder="Nombre del período (Ej: Semestre 1 2026)" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                <input style={{ padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }} placeholder="Código (Ej: 2026-1)" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} required />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input type="date" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }} value={formData.startDate} onChange={e => setFormData({ ...formData, startDate: e.target.value })} required />
+                  <input type="date" style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0' }} value={formData.endDate} onChange={e => setFormData({ ...formData, endDate: e.target.value })} required />
+                </div>
+                <Button type="submit" variant="primary" style={{ padding: '14px' }}>Crear Período</Button>
+              </form>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+      </AnimatePresence>
     </Container>
   );
 };

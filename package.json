@@ -56,6 +56,7 @@
     "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "react-router-dom": "^7.10.1",
+    "recharts": "^3.6.0",
     "styled-components": "^6.1.19",
     "tailwind-merge": "^3.4.0",
     "twilio": "^5.11.1",

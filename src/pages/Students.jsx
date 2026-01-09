@@ -11,10 +11,11 @@ import {
   Phone,
   Calendar,
   X,
-  UserPlus,
-  Filter,
   ChevronRight,
-  MoreVertical
+  MoreVertical,
+  Upload,
+  FileUp,
+  Download
 } from 'lucide-react';
 import { studentsAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
@@ -280,9 +281,16 @@ const ModalContent = styled(motion.div)`
   border-radius: 28px;
   width: 100%;
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   padding: 40px;
   position: relative;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  @media (max-width: 500px) {
+    padding: 24px;
+    border-radius: 20px;
+  }
 `;
 
 const ModalHeaderWrapper = styled.div`
@@ -302,6 +310,16 @@ const FormGroup = styled.div`
   flex-direction: column;
   gap: 8px;
   label { font-size: 13px; font-weight: 600; color: ${props => props.theme.colors.slate[700]}; }
+`;
+
+const FormRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const Input = styled.input`
@@ -336,8 +354,10 @@ const Students = () => {
   const [students, setStudents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', enrollmentDate: '' });
+  const [importData, setImportData] = useState('');
 
   useEffect(() => { loadStudents(); }, []);
 
@@ -369,6 +389,26 @@ const Students = () => {
       setFormData({ name: '', email: '', phone: '', enrollmentDate: new Date().toISOString().split('T')[0] });
     }
     setIsModalOpen(true);
+  };
+
+  const handleImport = async () => {
+    try {
+      const lines = importData.split('\n').filter(l => l.trim() !== '');
+      const studentsToImport = lines.map(line => {
+        const [name, email, phone] = line.split(',').map(s => s?.trim());
+        return { name, email, phone };
+      }).filter(s => s.name && s.email);
+
+      if (studentsToImport.length === 0) return toast.warning("Formato inválido");
+
+      await studentsAPI.importStudents(studentsToImport);
+      toast.success(`${studentsToImport.length} estudiantes importados`);
+      setIsImportModalOpen(false);
+      setImportData('');
+      loadStudents();
+    } catch (error) {
+      toast.error("Error al importar");
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -409,14 +449,25 @@ const Students = () => {
           <h1>{t('students.title')}</h1>
           <p>{t('students.subtitle')}</p>
         </HeaderTitle>
-        <ActionButton
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => handleOpenModal()}
-        >
-          <UserPlus size={20} />
-          {t('students.newStudent')}
-        </ActionButton>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <ActionButton
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setIsImportModalOpen(true)}
+            style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', boxShadow: 'none' }}
+          >
+            <FileUp size={20} />
+            Importar
+          </ActionButton>
+          <ActionButton
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => handleOpenModal()}
+          >
+            <Plus size={20} />
+            {t('students.newStudent')}
+          </ActionButton>
+        </div>
       </PageHeader>
 
       <TopBar>
@@ -470,6 +521,48 @@ const Students = () => {
       </StudentsGrid>
 
       <AnimatePresence>
+        {isImportModalOpen && (
+          <ModalOverlay initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsImportModalOpen(false)}>
+            <ModalContent initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={e => e.stopPropagation()}>
+              <ModalHeaderWrapper>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                  <div style={{ background: '#EEF2FF', padding: '10px', borderRadius: '12px' }}><FileUp color="#6366F1" /></div>
+                  <h2 style={{ margin: 0 }}>Importación Masiva</h2>
+                </div>
+                <p>Pega los datos de tus estudiantes desde Excel o una lista.</p>
+              </ModalHeaderWrapper>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '12px', fontWeight: '700', color: '#64748B', display: 'block', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  Formato requerido: Nombre, Correo, Teléfono
+                </label>
+                <textarea
+                  style={{ width: '100%', height: '200px', padding: '16px', borderRadius: '16px', border: '1px solid #E2E8F0', fontSize: '14px', fontFamily: 'monospace', resize: 'none' }}
+                  placeholder={"Juan Perez, juan@mail.com, 8090000000\nMaria Sosa, maria@mail.com, 8291112222"}
+                  value={importData}
+                  onChange={e => setImportData(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <ViewProfileBtn style={{ flex: 1, height: '48px' }} onClick={() => {
+                  const blob = new Blob(["Nombre, Correo, Telefono\nJuan Perez, juan@mail.com, 8090000000"], { type: 'text/csv' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'plantilla_estudiantes.csv';
+                  a.click();
+                }}>
+                  <Download size={18} /> Plantilla
+                </ViewProfileBtn>
+                <SubmitBtn style={{ flex: 2, margin: 0 }} onClick={handleImport}>
+                  Procesar Importación
+                </SubmitBtn>
+              </div>
+            </ModalContent>
+          </ModalOverlay>
+        )}
+
         {isModalOpen && (
           <ModalOverlay
             initial={{ opacity: 0 }}
@@ -510,7 +603,7 @@ const Students = () => {
                   />
                 </FormGroup>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <FormRow>
                   <FormGroup>
                     <label>{t('students.phone')}</label>
                     <Input
@@ -527,7 +620,7 @@ const Students = () => {
                       onChange={(e) => setFormData({ ...formData, enrollmentDate: e.target.value })}
                     />
                   </FormGroup>
-                </div>
+                </FormRow>
 
                 <SubmitBtn
                   type="submit"

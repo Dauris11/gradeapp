@@ -18,7 +18,10 @@ import {
   Settings,
   MessageCircle,
   CalendarDays,
-  History
+  History,
+  ClipboardCheck,
+  BarChart3,
+  Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import WhatsAppQRModal from './WhatsAppQRModal';
@@ -415,6 +418,7 @@ const Layout = () => {
       label: t('nav.academic') || 'Académico', items: [
         { icon: UserCheck, label: t('nav.enrollments'), path: '/enrollments' },
         { icon: Edit, label: t('nav.gradeManagement'), path: '/grade-management' },
+        { icon: ClipboardCheck, label: t('nav.attendance'), path: '/attendance' },
       ]
     },
     {
@@ -426,7 +430,9 @@ const Layout = () => {
     {
       label: t('nav.system') || 'Sistema', items: [
         { icon: FileText, label: t('nav.reports'), path: '/reports' },
+        { icon: BarChart3, label: t('nav.analytics'), path: '/analytics' },
         { icon: UserCog, label: t('nav.users'), path: '/users' },
+        { icon: Info, label: t('nav.about'), path: '/about' },
       ]
     },
     {

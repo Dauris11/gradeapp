@@ -106,6 +106,20 @@ export const studentsAPI = {
             console.error('Error en studentsAPI.delete:', error);
             throw error;
         }
+    },
+    
+    importStudents: async (students) => {
+        try {
+            const response = await fetch(`${API_URL}/students/import`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ students })
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en studentsAPI.importStudents:', error);
+            throw error;
+        }
     }
 };
 
@@ -295,6 +309,39 @@ export const gradesAPI = {
             console.error('Error en gradesAPI.delete:', error);
             throw error;
         }
+    },
+
+    // Calculate accumulated grade for an enrollment
+    calculateAccumulated: async (enrollmentId) => {
+        try {
+            const grades = await gradesAPI.getByEnrollment(enrollmentId);
+            if (!Array.isArray(grades) || grades.length === 0) return null;
+            
+            const assignments = grades.filter(g => g.type === 'assignment');
+            const exams = grades.filter(g => g.type === 'exam');
+            
+            const assignmentAvg = assignments.length > 0
+                ? assignments.reduce((sum, g) => sum + g.score, 0) / assignments.length
+                : 0;
+            
+            const examAvg = exams.length > 0
+                ? exams.reduce((sum, g) => sum + g.score, 0) / exams.length
+                : 0;
+            
+            // 40% assignments, 60% exams (Default institutional weights)
+            const accumulated = (assignmentAvg * 0.4) + (examAvg * 0.6);
+            
+            return {
+                assignmentAvg: Math.round(assignmentAvg * 10) / 10,
+                examAvg: Math.round(examAvg * 10) / 10,
+                accumulated: Math.round(accumulated * 10) / 10,
+                totalAssignments: assignments.length,
+                totalExams: exams.length
+            };
+        } catch (error) {
+            console.error('Error calculating accumulated:', error);
+            return null;
+        }
     }
 };
 
@@ -388,7 +435,232 @@ export const notificationsAPI = {
     }
 };
 
+// ==================== PERÍODOS ACADÉMICOS Y HISTORIAL ====================
+export const academicAPI = {
+    getAllPeriods: async () => {
+        try {
+            const response = await fetch(`${API_URL}/academic/periods`);
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error en academicAPI.getAllPeriods:', error);
+            return [];
+        }
+    },
+
+    getActivePeriod: async () => {
+        try {
+            const response = await fetch(`${API_URL}/academic/periods/active`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en academicAPI.getActivePeriod:', error);
+            return null;
+        }
+    },
+
+    getStudentHistory: async (studentId) => {
+        try {
+            const response = await fetch(`${API_URL}/academic/students/${studentId}/history`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en academicAPI.getStudentHistory:', error);
+            return [];
+        }
+    },
+
+    getPeriodStudents: async (periodId) => {
+        try {
+            const response = await fetch(`${API_URL}/academic/periods/${periodId}/students`);
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error en academicAPI.getPeriodStudents:', error);
+            return [];
+        }
+    },
+
+    getPeriodStats: async (periodId) => {
+        try {
+            const response = await fetch(`${API_URL}/academic/periods/${periodId}/stats`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en academicAPI.getPeriodStats:', error);
+            return null;
+        }
+    },
+
+    activatePeriod: async (periodId) => {
+        try {
+            const response = await fetch(`${API_URL}/academic/periods/${periodId}/activate`, {
+                method: 'POST'
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en academicAPI.activatePeriod:', error);
+            throw error;
+        }
+    },
+
+    createPeriod: async (period) => {
+        try {
+            const response = await fetch(`${API_URL}/academic/periods`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(period)
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en academicAPI.createPeriod:', error);
+            throw error;
+        }
+    },
+
+    getAllTimeStudents: async () => {
+        try {
+            const response = await fetch(`${API_URL}/academic/students/all-time`);
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error en academicAPI.getAllTimeStudents:', error);
+            return [];
+        }
+    }
+};
+
+// ==================== ASISTENCIA ====================
+export const attendanceAPI = {
+    getBySubjectAndDate: async (subjectId, date) => {
+        try {
+            const response = await fetch(`${API_URL}/attendance/subject/${subjectId}?date=${date}`);
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error en attendanceAPI.getBySubjectAndDate:', error);
+            return [];
+        }
+    },
+
+    saveBulk: async (attendanceRecords) => {
+        try {
+            const response = await fetch(`${API_URL}/attendance/bulk`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ attendanceRecords })
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en attendanceAPI.saveBulk:', error);
+            throw error;
+        }
+    },
+
+    getStudentStats: async (studentId, subjectId) => {
+        try {
+            const response = await fetch(`${API_URL}/attendance/student/${studentId}/subject/${subjectId}/stats`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en attendanceAPI.getStudentStats:', error);
+            return [];
+        }
+    },
+
+    getDetailedReport: async (subjectId, startDate, endDate) => {
+        try {
+            const response = await fetch(`${API_URL}/attendance/report/subject/${subjectId}?startDate=${startDate}&endDate=${endDate}`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en attendanceAPI.getDetailedReport:', error);
+            return null;
+        }
+    }
+};
+
+// ==================== ANALÍTICA ====================
+export const analyticsAPI = {
+    getGradesDistribution: async () => {
+        try {
+            const response = await fetch(`${API_URL}/analytics/grades-distribution`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en analyticsAPI.getGradesDistribution:', error);
+            return [];
+        }
+    },
+
+    getSubjectPerformance: async () => {
+        try {
+            const response = await fetch(`${API_URL}/analytics/subject-performance`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en analyticsAPI.getSubjectPerformance:', error);
+            return [];
+        }
+    },
+
+    getAttendanceSummary: async () => {
+        try {
+            const response = await fetch(`${API_URL}/analytics/attendance-summary`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en analyticsAPI.getAttendanceSummary:', error);
+            return [];
+        }
+    }
+};
+
 // Función de inicialización (ya no necesaria, pero la dejamos por compatibilidad)
+// ==================== CONFIGURACIONES ====================
+export const settingsAPI = {
+    getAll: async () => {
+        try {
+            const response = await fetch(`${API_URL}/settings`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en settingsAPI.getAll:', error);
+            return {};
+        }
+    },
+    update: async (key, value) => {
+        try {
+            const response = await fetch(`${API_URL}/settings`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key, value })
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en settingsAPI.update:', error);
+            return { success: false };
+        }
+    },
+    updateBulk: async (settings) => {
+        try {
+            const response = await fetch(`${API_URL}/settings/bulk`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ settings })
+            });
+            return response.json();
+        } catch (error) {
+            console.error('Error en settingsAPI.updateBulk:', error);
+            return { success: false };
+        }
+    }
+};
+
+// ==================== PORTAL ESTUDIANTE ====================
+export const portalAPI = {
+    getStudentData: async (studentId) => {
+        try {
+            const response = await fetch(`${API_URL}/portal/student/${studentId}`);
+            return response.json();
+        } catch (error) {
+            console.error('Error en portalAPI.getStudentData:', error);
+            return null;
+        }
+    }
+};
+
 export const initDatabase = async () => {
     console.log('✅ Conectado al backend REST en', API_URL);
     return Promise.resolve();
@@ -402,5 +674,10 @@ export default {
     gradesAPI,
     calendarAPI,
     notificationsAPI,
+    academicAPI,
+    attendanceAPI,
+    analyticsAPI,
+    settingsAPI,
+    portalAPI,
     initDatabase
 };

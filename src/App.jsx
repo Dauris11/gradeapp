@@ -20,6 +20,10 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AcademicPeriods from './pages/AcademicPeriods';
 import StudentHistory from './pages/StudentHistory';
+import Attendance from './pages/Attendance';
+import Analytics from './pages/Analytics';
+import About from './pages/About';
+import StudentPortal from './pages/StudentPortal';
 
 // Error Boundary para capturar errores de renderizado
 class ErrorBoundary extends React.Component {
@@ -86,6 +90,12 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/student-portal" element={
+                    <ProtectedRoute>
+                      <StudentPortal />
+                    </ProtectedRoute>
+                  } />
+
                   {/* Rutas para teachers y admins */}
                   <Route path="/students" element={
                     <ProtectedRoute requiredRole="teacher">
@@ -111,6 +121,12 @@ function App() {
                     </ProtectedRoute>
                   } />
 
+                  <Route path="/attendance" element={
+                    <ProtectedRoute requiredRole="teacher">
+                      <Attendance />
+                    </ProtectedRoute>
+                  } />
+
                   <Route path="/grades" element={
                     <ProtectedRoute requiredRole="teacher">
                       <Grades />
@@ -126,6 +142,18 @@ function App() {
                   <Route path="/reports" element={
                     <ProtectedRoute requiredRole="teacher">
                       <Reports />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/analytics" element={
+                    <ProtectedRoute requiredRole="teacher">
+                      <Analytics />
+                    </ProtectedRoute>
+                  } />
+
+                  <Route path="/about" element={
+                    <ProtectedRoute>
+                      <About />
                     </ProtectedRoute>
                   } />
 

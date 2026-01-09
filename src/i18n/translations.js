@@ -12,6 +12,9 @@ export const translations = {
       users: 'Usuarios',
       academicPeriods: 'Períodos Académicos',
       studentHistory: 'Historial de Estudiantes',
+      attendance: 'Control de Asistencia',
+      analytics: 'Analítica Avanzada',
+      about: 'Acerca de',
       settings: 'Configuración',
       logout: 'Cerrar Sesión'
     },
@@ -80,7 +83,7 @@ export const translations = {
       theme: 'Tema',
       lightMode: 'Modo Claro',
       darkMode: 'Modo Oscuro',
-      language: 'Idioma',
+      language: 'Idioma 🇩🇴',
       colorPreview: 'Vista Previa de Colores',
       primary: 'Principal',
       secondary: 'Secundario',
@@ -102,6 +105,40 @@ export const translations = {
       active: 'Activo',
       year: 'Año',
       quarter: 'Cuatrimestre'
+    },
+    // Asistencia
+    attendance: {
+      title: 'Control de Asistencia',
+      subtitle: 'Gestiona la presencia diaria de los estudiantes',
+      date: 'Fecha de Asistencia',
+      present: 'Presente',
+      absent: 'Ausento',
+      late: 'Tardanza',
+      excused: 'Justificado',
+      saveAttendance: 'Guardar Asistencia',
+      markAllPresent: 'Marcar todos como Presente',
+      stats: 'Estadísticas de Asistencia',
+      selectSubject: 'Seleccionar Materia para pasar lista'
+    },
+    // Analítica
+    analytics: {
+      title: 'Panel de Analítica',
+      subtitle: 'Visualización de datos y rendimiento académico',
+      gradeDistribution: 'Distribución de Calificaciones',
+      subjectPerformance: 'Rendimiento por Materia',
+      attendanceOverview: 'Resumen de Asistencia Global',
+      averageGrade: 'Promedio General',
+      totalStudents: 'Total Estudiantes'
+    },
+    // Acerca de
+    about: {
+      title: 'Acerca de GradePro',
+      creator: 'Creado por',
+      developer: 'Dauris Santana',
+      exclusivity: 'Software desarrollado exclusivamente para el uso de "Global Effect"',
+      legalTitle: 'Aviso Legal y Propiedad Intelectual',
+      legalText: 'Este software está protegido por la Ley No. 65-00 sobre Derecho de Autor de la República Dominicana y tratados internacionales asociados. La reproducción, distribución, plagio o cualquier uso no autorizado de este programa constituye una violación legal sujeta a severas sanciones civiles y penales conforme a la legislación dominicana. El código fuente y su arquitectura son propiedad intelectual exclusiva del autor, prohibiéndose terminantemente su modificación o ingeniería inversa sin autorización expresa.',
+      version: 'Versión 1.1.2'
     },
     // Calificaciones
     grades: {
@@ -159,6 +196,9 @@ export const translations = {
       users: 'Users',
       academicPeriods: 'Academic Periods',
       studentHistory: 'Student History',
+      attendance: 'Attendance Control',
+      analytics: 'Advanced Analytics',
+      about: 'About',
       settings: 'Settings',
       logout: 'Logout'
     },
@@ -227,7 +267,7 @@ export const translations = {
       theme: 'Theme',
       lightMode: 'Light Mode',
       darkMode: 'Dark Mode',
-      language: 'Language',
+      language: 'Language 🇺🇸',
       colorPreview: 'Color Preview',
       primary: 'Primary',
       secondary: 'Secondary',
@@ -249,6 +289,40 @@ export const translations = {
       active: 'Active',
       year: 'Year',
       quarter: 'Quarter'
+    },
+    // Attendance
+    attendance: {
+      title: 'Attendance Control',
+      subtitle: 'Manage daily student presence',
+      date: 'Attendance Date',
+      present: 'Present',
+      absent: 'Absent',
+      late: 'Late',
+      excused: 'Excused',
+      saveAttendance: 'Save Attendance',
+      markAllPresent: 'Mark all as Present',
+      stats: 'Attendance Stats',
+      selectSubject: 'Select Subject to take attendance'
+    },
+    // Analytics
+    analytics: {
+      title: 'Analytics Dashboard',
+      subtitle: 'Data visualization and academic performance',
+      gradeDistribution: 'Grade Distribution',
+      subjectPerformance: 'Subject Performance',
+      attendanceOverview: 'Global Attendance Overview',
+      averageGrade: 'General Average',
+      totalStudents: 'Total Students'
+    },
+    // About
+    about: {
+      title: 'About GradePro',
+      creator: 'Created by',
+      developer: 'Dauris Santana',
+      exclusivity: 'Software developed exclusively for the use of "Global Effect"',
+      legalTitle: 'Legal Notice and Intellectual Property',
+      legalText: 'This software is protected by Law No. 65-00 on Copyright of the Dominican Republic and international intellectual property treaties. Unauthorized reproduction, distribution, plagiarism, or any use of this program constitutes a legal violation subject to severe civil and criminal penalties under Dominican legislation. The source code and its architecture are the exclusive intellectual property of the author, and any modification or reverse engineering without express consent is strictly prohibited.',
+      version: 'Version 1.1.2'
     },
     // Grades
     grades: {
@@ -306,6 +380,7 @@ export const translations = {
       users: 'Itilizatè',
       academicPeriods: 'Peryòd Akademik',
       studentHistory: 'Istwa Elèv',
+      attendance: 'Kontwòl Prezan',
       settings: 'Paramèt',
       logout: 'Dekonekte'
     },
@@ -374,7 +449,7 @@ export const translations = {
       theme: 'Tèm',
       lightMode: 'Mòd Klè',
       darkMode: 'Mòd Fènwa',
-      language: 'Lang',
+      language: 'Lang 🇭🇹',
       colorPreview: 'Apèsi Koulè',
       primary: 'Prensipal',
       secondary: 'Segondè',
@@ -396,6 +471,20 @@ export const translations = {
       active: 'Aktif',
       year: 'Ane',
       quarter: 'Trimès'
+    },
+    // Attendance
+    attendance: {
+      title: 'Kontwòl Prezan',
+      subtitle: 'Jere prezans elèv yo chak jou',
+      date: 'Dat Prezans',
+      present: 'Prezan',
+      absent: 'Absan',
+      late: 'An reta',
+      excused: 'Eskize',
+      saveAttendance: 'Anrejistre Prezans',
+      markAllPresent: 'Make tout moun Prezan',
+      stats: 'Estatistik Prezans',
+      selectSubject: 'Chwazi Matye pou fè apèl'
     },
     // Nòt
     grades: {
@@ -453,6 +542,7 @@ export const translations = {
       users: 'Utilisateurs',
       academicPeriods: 'Périodes Académiques',
       studentHistory: 'Historique Étudiant',
+      attendance: 'Contrôle d\'Assiduité',
       settings: 'Paramètres',
       logout: 'Déconnexion'
     },
@@ -521,7 +611,7 @@ export const translations = {
       theme: 'Thème',
       lightMode: 'Mode Clair',
       darkMode: 'Mode Sombre',
-      language: 'Langue',
+      language: 'Langue 🇫🇷',
       colorPreview: 'Aperçu des Couleurs',
       primary: 'Primaire',
       secondary: 'Secondaire',
@@ -543,6 +633,20 @@ export const translations = {
       active: 'Actif',
       year: 'Année',
       quarter: 'Trimestre'
+    },
+    // Attendance
+    attendance: {
+      title: 'Contrôle d\'Assiduité',
+      subtitle: 'Gérer la présence quotidienne des étudiants',
+      date: 'Date de Présence',
+      present: 'Présent',
+      absent: 'Absent',
+      late: 'Retard',
+      excused: 'Justifié',
+      saveAttendance: 'Enregistrer la Présence',
+      markAllPresent: 'Marquer tous comme Présent',
+      stats: 'Statisques de Présence',
+      selectSubject: 'Sélectionner une Matière pour faire l\'appel'
     },
     // Notes
     grades: {
@@ -597,7 +701,7 @@ export const languageNames = {
 };
 
 export const languageFlags = {
-  es: '🇪🇸',
+  es: '🇩🇴',
   en: '🇺🇸',
   fr: '🇫🇷',
   ht: '🇭🇹'

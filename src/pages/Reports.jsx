@@ -19,12 +19,13 @@ import {
   Send,
   CheckCircle2
 } from 'lucide-react';
-import { studentsAPI, enrollmentsAPI, gradesAPI } from '../services/database';
+import { studentsAPI, enrollmentsAPI, gradesAPI, subjectsAPI, attendanceAPI } from '../services/database';
 import PDFService from '../services/pdfService';
 import EmailService from '../services/emailService';
 import WhatsAppService from '../services/whatsappService';
 import { Toast, useToast } from '../components/Toast';
 import { useLanguage } from '../i18n/LanguageContext';
+import { Calendar as CalendarIcon, ClipboardCheck } from 'lucide-react';
 
 const Container = styled.div`
   display: flex;
@@ -181,6 +182,18 @@ const StudentsGrid = styled.div`
   gap: 12px;
 `;
 
+const ReportsControls = styled.div`
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 32px;
+
+  @media (max-width: ${props => props.theme.breakpoints.md}) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
 const StudentRow = styled(motion.div)`
   display: flex;
   align-items: center;
@@ -253,9 +266,14 @@ const ModalBox = styled(motion.div)`
   padding: 40px;
   width: 100%;
   max-width: 500px;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
   position: relative;
+
+  @media (max-width: ${props => props.theme.breakpoints.sm}) {
+    padding: 24px;
+    border-radius: 20px;
+  }
 `;
 
 const IconButton = styled.button`
@@ -315,6 +333,14 @@ const Reports = () => {
   const [phoneInput, setPhoneInput] = useState('');
   const [sendingWhatsApp, setSendingWhatsApp] = useState({});
   const [downloadingPDF, setDownloadingPDF] = useState({});
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [attendanceConfig, setAttendanceConfig] = useState({
+    subjectId: '',
+    range: 'weekly', // weekly, monthly, custom
+    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
+  const [allSubjects, setAllSubjects] = useState([]);
 
   useEffect(() => { loadData(); }, []);
 
@@ -325,8 +351,14 @@ const Reports = () => {
       ]);
       setStudents(Array.isArray(s) ? s : []);
       const validEnrollments = Array.isArray(e) ? e : [];
-      setEnrollments(validEnrollments.map(item => ({ ...item, accumulated: gradesAPI.calculateAccumulated?.(item.id)?.accumulated || null })));
+      const enrichedEnrollments = await Promise.all(validEnrollments.map(async item => {
+        const accumulated = gradesAPI.calculateAccumulated ? await gradesAPI.calculateAccumulated(item.id) : null;
+        return { ...item, accumulated: accumulated?.accumulated || null };
+      }));
+      setEnrollments(enrichedEnrollments);
       setGrades(Array.isArray(g) ? g : []);
+      const subjects = await subjectsAPI.getAll();
+      setAllSubjects(subjects);
     } catch (err) { toast.error(t('common.error')); }
   };
 
@@ -488,6 +520,32 @@ const Reports = () => {
     setIsProcessing(false);
   };
 
+  const handleGenerateAttendancePDF = async () => {
+    const { subjectId, startDate, endDate } = attendanceConfig;
+    if (!subjectId) return toast.warning('Selecciona una materia');
+
+    try {
+      setIsProcessing(true);
+      const subject = allSubjects.find(s => s.id === parseInt(subjectId));
+      const reportData = await attendanceAPI.getDetailedReport(subjectId, startDate, endDate);
+
+      if (!reportData || reportData.dates.length === 0) {
+        toast.warning('No hay datos de asistencia en ese rango');
+        return;
+      }
+
+      const doc = await PDFService.generateAttendanceReport(subject, reportData.dates, reportData.students);
+      PDFService.downloadPDF(doc, `Asistencia_${subject.name.replace(/\s+/g, '_')}_${startDate}_${endDate}.pdf`);
+      toast.success(t('common.success'));
+      setShowAttendanceModal(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(t('common.error'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const toggleSelection = (id) => setSelectedStudents(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
 
   return (
@@ -532,8 +590,17 @@ const Reports = () => {
           <IconWrapper bg="rgba(139, 92, 246, 0.1)" color="#8B5CF6"><Settings size={26} /></IconWrapper>
           <ActionTitle>Configurar Correo</ActionTitle>
           <ActionDescription>Conecta tu cuenta de Gmail para enviar reportes.</ActionDescription>
-          <MainButton bg="#F1F5F9" color="#e4185cff" shadow="none" onClick={() => setShowEmailConfig(true)}>
+          <MainButton bg="#F1F5F9" color="#e43c59" shadow="none" onClick={() => setShowEmailConfig(true)}>
             <Settings size={18} /> Configurar
+          </MainButton>
+        </ActionCard>
+
+        <ActionCard $accent="#10B981" whileHover={{ y: -5 }}>
+          <IconWrapper bg="rgba(16, 185, 129, 0.1)" color="#10B981"><ClipboardCheck size={26} /></IconWrapper>
+          <ActionTitle>{t('attendance.title')}</ActionTitle>
+          <ActionDescription>Reportes detallados de asistencia semanal o mensual por materia.</ActionDescription>
+          <MainButton bg="linear-gradient(135deg, #10B981 0%, #059669 100%)" onClick={() => setShowAttendanceModal(true)}>
+            <CalendarIcon size={18} /> Generar Reporte
           </MainButton>
         </ActionCard>
       </ActionsGrid>
@@ -766,6 +833,85 @@ const Reports = () => {
                       Enviar Reporte
                     </>
                   )}
+                </MainButton>
+              </div>
+            </ModalBox>
+          </Modal>
+        )}
+
+        {showAttendanceModal && (
+          <Modal initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAttendanceModal(false)}>
+            <ModalBox initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '22px', fontWeight: '800', margin: 0 }}>Reporte de Asistencia</h3>
+                <IconButton onClick={() => setShowAttendanceModal(false)}><X size={20} /></IconButton>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '700' }}>{t('subjects.title')}</label>
+                  <select
+                    style={{ width: '100%', padding: '12px', borderRadius: '12px', marginTop: '8px', border: '1px solid #e2e8f0' }}
+                    value={attendanceConfig.subjectId}
+                    onChange={e => setAttendanceConfig({ ...attendanceConfig, subjectId: e.target.value })}
+                  >
+                    <option value="">-- Seleccionar Materia --</option>
+                    {allSubjects.map(s => (
+                      <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ fontSize: '14px', fontWeight: '700' }}>Fecha Inicio</label>
+                    <Input
+                      type="date"
+                      value={attendanceConfig.startDate}
+                      onChange={e => setAttendanceConfig({ ...attendanceConfig, startDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '14px', fontWeight: '700' }}>Fecha Fin</label>
+                    <Input
+                      type="date"
+                      value={attendanceConfig.endDate}
+                      onChange={e => setAttendanceConfig({ ...attendanceConfig, endDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <SelectAllBtn
+                    style={{ background: '#EEF2FF', color: '#6366F1', border: '1px solid #6366F120', flex: 1 }}
+                    onClick={() => {
+                      const end = new Date();
+                      const start = new Date(end);
+                      start.setDate(end.getDate() - 7);
+                      setAttendanceConfig({ ...attendanceConfig, startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] });
+                    }}
+                  >
+                    Semanal (7d)
+                  </SelectAllBtn>
+                  <SelectAllBtn
+                    style={{ background: '#ECFDF5', color: '#10B981', border: '1px solid #10B98120', flex: 1 }}
+                    onClick={() => {
+                      const end = new Date();
+                      const start = new Date(end);
+                      start.setDate(end.getDate() - 30);
+                      setAttendanceConfig({ ...attendanceConfig, startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0] });
+                    }}
+                  >
+                    Mensual (30d)
+                  </SelectAllBtn>
+                </div>
+
+                <MainButton
+                  onClick={handleGenerateAttendancePDF}
+                  disabled={isProcessing}
+                  style={{ marginTop: '12px' }}
+                >
+                  {isProcessing ? <Loader className="animate-spin" size={18} /> : <Download size={18} />} Descargar Reporte PDF
                 </MainButton>
               </div>
             </ModalBox>
