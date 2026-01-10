@@ -3,6 +3,13 @@ const path = require('path');
 const { execSync } = require('child_process');
 const readline = require('readline');
 
+// Intentar cargar dotenv si existe para manejar el token fácilmente
+try {
+    require('dotenv').config();
+} catch (e) {
+    // No pasa nada si no está
+}
+
 const packageJsonPath = path.join(__dirname, '../package.json');
 const packageJson = require(packageJsonPath);
 
@@ -11,62 +18,74 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
-console.log(`\n🚀 Iniciando proceso de lanzamiento (Release)`);
-console.log(`📦 Versión actual: ${packageJson.version}`);
+console.log(`\n🚀 Iniciando proceso de lanzamiento AUTOMÁTICO (Release)`);
+console.log(`📦 Versión detectada en package.json: ${packageJson.version}`);
 
-rl.question('¿Qué tipo de actualización es? (patch/minor/major) [patch]: ', (answer) => {
-    let type = answer.trim() || 'patch';
-    
-    // Calcular nueva versión (lógica simple)
-    let [major, minor, patch] = packageJson.version.split('.').map(Number);
-    if (type === 'major') { major++; minor = 0; patch = 0; }
-    else if (type === 'minor') { minor++; patch = 0; }
-    else { patch++; }
-    
-    const newVersion = `${major}.${minor}.${patch}`;
-    console.log(`\n✨ Nueva versión será: ${newVersion}`);
-    
-    rl.question('¿Proceder? (s/n): ', (confirm) => {
-        if (confirm.toLowerCase() !== 's') {
-            console.log('Cancelado.');
-            rl.close();
-            process.exit(0);
-        }
+// Verificar si hay un token de GitHub configurado
+const hasToken = process.env.GH_TOKEN || process.env.GITHUB_TOKEN;
 
+if (!hasToken) {
+    console.log('\n⚠️  ADVERTENCIA: No se detectó GH_TOKEN en las variables de entorno.');
+    console.log('El script subirá el código, pero NO podrá crear el release en GitHub automáticamente.');
+    console.log('Para automatizarlo completamente, crea un archivo .env con: GH_TOKEN=tu_token_aqui\n');
+}
+
+rl.question(`¿Confirmas el lanzamiento de la versión v${packageJson.version}? (s/n): `, (confirm) => {
+    if (confirm.toLowerCase() !== 's') {
+        console.log('❌ Cancelado.');
+        rl.close();
+        process.exit(0);
+    }
+
+    const version = packageJson.version;
+
+    try {
+        // 1. Ejecutar Build y Publicar
+        console.log('\n🔨 Paso 1: Compilando y Subiendo a GitHub Releases...');
+        console.log('Esto creará el instalador y lo subirá automáticamente si tienes el token configurado.');
+        
+        // Ejecutamos electron-builder con el flag de publicar
+        // "always" fuerza a crear el release si no existe
+        const publishFlag = hasToken ? '--publish always' : '';
+        execSync(`npm run build && npx electron-builder ${publishFlag}`, { 
+            stdio: 'inherit', 
+            cwd: path.join(__dirname, '..'),
+            env: { ...process.env }
+        });
+
+        // 2. Git Commit & Tag
+        console.log('\n📝 Paso 2: Guardando cambios en Git...');
         try {
-            // 1. Actualizar package.json
-            console.log('📝 Actualizando package.json...');
-            packageJson.version = newVersion;
-            fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-
-            // 2. Ejecutar Build
-            console.log('🔨 Creando instalador (esto puede tardar unos minutos)...');
-            // Usamos stdio inherit para ver el output de electron-builder
-            execSync('npm run electron:build', { stdio: 'inherit', cwd: path.join(__dirname, '..') });
-
-            // 3. Git Commit & Tag
-            console.log('code-management committing changes...');
-            execSync('git add package.json', { cwd: path.join(__dirname, '..') });
-            execSync(`git commit -m "chore: release v${newVersion}"`, { cwd: path.join(__dirname, '..') });
-            execSync(`git tag v${newVersion}`, { cwd: path.join(__dirname, '..') });
-
-            // 4. Git Push
-            console.log('☁️  Subiendo a GitHub...');
-            execSync('git push && git push --tags', { cwd: path.join(__dirname, '..') });
-
-            console.log('\n✅ ¡PROCESO COMPLETADO EXITOSAMENTE!');
-            console.log(`\n⚠️  PASO FINAL MANUAL:`);
-            console.log(`1. Ve a https://github.com/Dauris11/gradeapp/releases`);
-            console.log(`2. Crea un 'New Release' seleccionando el tag v${newVersion}`);
-            console.log(`3. ARRASTRA Y SUELTA estos archivos desde la carpeta 'dist-electron':`);
-            console.log(`   - Grade Manager Setup ${newVersion}.exe`);
-            console.log(`   - latest.yml`);
-            
-        } catch (error) {
-            console.error('\n❌ Error durante el proceso:', error.message);
-            // Revertir package.json si falló algo crítico podría ser buena idea, pero lo dejaremos así para inspección.
-        } finally {
-            rl.close();
+            execSync('git add .', { cwd: path.join(__dirname, '..') });
+            execSync(`git commit -m "chore: release v${version}"`, { cwd: path.join(__dirname, '..') });
+        } catch (e) {
+            console.log('ℹ️ No hay cambios para committear o el commit ya existe.');
         }
-    });
+
+        console.log(`\n🏷️  Paso 3: Creando etiqueta v${version}...`);
+        try {
+            execSync(`git tag -a v${version} -m "Release version ${version}"`, { cwd: path.join(__dirname, '..') });
+        } catch (e) {
+            console.log(`ℹ️ El tag v${version} ya existe.`);
+        }
+
+        // 3. Git Push
+        console.log('\n☁️  Paso 4: Subiendo código y etiquetas a GitHub...');
+        execSync('git push origin main && git push origin --tags', { 
+            stdio: 'inherit',
+            cwd: path.join(__dirname, '..') 
+        });
+
+        console.log(`\n✅ ¡ÉXITO! La versión v${version} ha sido procesada.`);
+        if (hasToken) {
+            console.log(`🔗 Verifica tu release en: https://github.com/${packageJson.build.publish.owner}/${packageJson.build.publish.repo}/releases`);
+        } else {
+            console.log(`⚠️  Recuerda que debes subir el archivo .exe manualmente a GitHub porque no se detectó GH_TOKEN.`);
+        }
+        
+    } catch (error) {
+        console.error('\n❌ Error durante el proceso:', error.message);
+    } finally {
+        rl.close();
+    }
 });
