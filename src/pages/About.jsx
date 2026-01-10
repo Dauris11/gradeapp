@@ -150,59 +150,59 @@ const FooterLogos = styled.div`
 `;
 
 const About = () => {
-    const { t } = useLanguage();
+  const { t } = useLanguage();
 
-    return (
-        <Container>
-            <HeroCard
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-            >
-                <LogoContainer>
-                    <Logo src="/imagenes/ge-logo.png" alt="Global Effect" />
-                    <Divider />
-                    <Logo src="/imagenes/Imagen2.png" alt="Institutional Logo" />
-                </LogoContainer>
+  return (
+    <Container>
+      <HeroCard
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <LogoContainer>
+          <Logo src="imagenes/ge-logo.png" alt="Global Effect" />
+          <Divider />
+          <Logo src="imagenes/Imagen2.png" alt="Institutional Logo" />
+        </LogoContainer>
 
-                <AppTitle>GradePro</AppTitle>
-                <VersionTag>{t('about.version')}</VersionTag>
+        <AppTitle>GradePro</AppTitle>
+        <VersionTag>{t('about.version')}</VersionTag>
 
-                <ExclusivityText>
-                    <Globe size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
-                    {t('about.exclusivity')}
-                </ExclusivityText>
+        <ExclusivityText>
+          <Globe size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} />
+          {t('about.exclusivity')}
+        </ExclusivityText>
 
-                <InfoGrid>
-                    <InfoCard>
-                        <CardHeader>
-                            <User size={20} />
-                            <h3>{t('about.creator')}</h3>
-                        </CardHeader>
-                        <DeveloperName>{t('about.developer')}</DeveloperName>
-                        <LegalText>
-                            Software Architect & Lead Developer
-                        </LegalText>
-                    </InfoCard>
+        <InfoGrid>
+          <InfoCard>
+            <CardHeader>
+              <User size={20} />
+              <h3>{t('about.creator')}</h3>
+            </CardHeader>
+            <DeveloperName>{t('about.developer')}</DeveloperName>
+            <LegalText>
+              Software Architect & Lead Developer
+            </LegalText>
+          </InfoCard>
 
-                    <InfoCard>
-                        <CardHeader>
-                            <Shield size={20} />
-                            <h3>{t('about.legalTitle')}</h3>
-                        </CardHeader>
-                        <LegalText>
-                            {t('about.legalText')}
-                        </LegalText>
-                    </InfoCard>
-                </InfoGrid>
+          <InfoCard>
+            <CardHeader>
+              <Shield size={20} />
+              <h3>{t('about.legalTitle')}</h3>
+            </CardHeader>
+            <LegalText>
+              {t('about.legalText')}
+            </LegalText>
+          </InfoCard>
+        </InfoGrid>
 
-                <div style={{ marginTop: '48px', color: '#94a3b8', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Copyright size={14} />
-                    {new Date().getFullYear()} {t('about.developer')}. All rights reserved.
-                </div>
-            </HeroCard>
-        </Container>
-    );
+        <div style={{ marginTop: '48px', color: '#94a3b8', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Copyright size={14} />
+          {new Date().getFullYear()} {t('about.developer')}. All rights reserved.
+        </div>
+      </HeroCard>
+    </Container>
+  );
 };
 
 export default About;

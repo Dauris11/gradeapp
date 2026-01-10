@@ -371,8 +371,8 @@ const Students = () => {
   };
 
   const filteredStudents = students.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (s.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const handleOpenModal = (student = null) => {
@@ -491,7 +491,7 @@ const Students = () => {
             transition={{ delay: i * 0.05 }}
           >
             <CardHeader>
-              <UserAvatar>{s.name.charAt(0)}</UserAvatar>
+              <UserAvatar>{(s.name || 'U').charAt(0)}</UserAvatar>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <IconButton onClick={() => handleOpenModal(s)}><Edit size={16} /></IconButton>
                 <IconButton onClick={() => handleDelete(s.id, s.name)} color="#ef4444"><Trash2 size={16} /></IconButton>

@@ -476,7 +476,7 @@ const Layout = () => {
           >
             <SidebarHeader>
               <LogoContainer>
-                <img src="/imagenes/logo-principal.png" alt="GradePro Logo" />
+                <img src="imagenes/logo-principal.png" alt="GradePro Logo" />
               </LogoContainer>
               <AppTitle>GradePro</AppTitle>
             </SidebarHeader>

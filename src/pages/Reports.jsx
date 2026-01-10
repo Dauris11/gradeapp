@@ -640,7 +640,7 @@ const Reports = () => {
             <StudentRow key={s.id} selected={selectedStudents.includes(s.id)} onClick={() => toggleSelection(s.id)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                 <input type="checkbox" checked={selectedStudents.includes(s.id)} readOnly style={{ width: '18px', height: '18px' }} />
-                <Avatar>{s.name.charAt(0)}</Avatar>
+                <Avatar>{(s.name || 'U').charAt(0)}</Avatar>
                 <NameChip>
                   <h4>{s.name}</h4>
                   <p>{s.email || 'Sin correo registrado'}</p>

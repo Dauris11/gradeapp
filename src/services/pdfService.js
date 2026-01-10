@@ -24,7 +24,7 @@ export const PDFService = {
 
         // Logo izquierdo (opcional - si falla, continúa sin logo)
         try {
-            const logoPath = window.location.origin + '/imagenes/logo-principal.png';
+            const logoPath = 'imagenes/logo-principal.png';
             const logoImg = new Image();
             logoImg.crossOrigin = 'Anonymous';
             
@@ -68,7 +68,7 @@ export const PDFService = {
         // Espacio para segundo logo (esquina derecha)
         // Placeholder para logo secundario que se agregará después
         try {
-            const logo2Path = window.location.origin + '/imagenes/logo-secundario.png';
+            const logo2Path = 'imagenes/logo-secundario.png';
             const logo2Img = new Image();
             logo2Img.crossOrigin = 'Anonymous';
             
@@ -301,7 +301,7 @@ export const PDFService = {
 
         // Logo izquierdo (opcional)
         try {
-            const logoPath = window.location.origin + '/imagenes/logo-principal.png';
+            const logoPath = 'imagenes/logo-principal.png';
             const logoImg = new Image();
             logoImg.crossOrigin = 'Anonymous';
             
@@ -340,7 +340,7 @@ export const PDFService = {
 
         // Logo secundario (esquina derecha)
         try {
-            const logo2Path = window.location.origin + '/imagenes/logo-secundario.png';
+            const logo2Path = 'imagenes/logo-secundario.png';
             const logo2Img = new Image();
             logo2Img.crossOrigin = 'Anonymous';
             
