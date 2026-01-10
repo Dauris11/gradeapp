@@ -15,7 +15,8 @@ import {
   MoreVertical,
   Upload,
   FileUp,
-  Download
+  Download,
+  Filter
 } from 'lucide-react';
 import { studentsAPI } from '../services/database';
 import { Toast, useToast } from '../components/Toast';
